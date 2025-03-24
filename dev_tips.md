@@ -24,6 +24,9 @@ git config --global core.autocrlf true    # Windows
 
 # Clonar o repositório
 git clone git@github.com:mangabyte/surucursed.git
+
+# Antes de iniciar qualquer alteração
+git pull origin main #Assim você estará trabalhando com a versão mais atualizada
 ```
 
 ## Visual Studio Code
