@@ -1,0 +1,15 @@
+# Binários e objetos
+bin/
+*.exe
+*.o
+*.out
+**/output/
+
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# SDL
+*.dll
+*.so
