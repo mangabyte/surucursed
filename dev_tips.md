@@ -21,6 +21,9 @@ git config --global user.mail "email@email.com"
 # Estes comandos para evitar conflitos nas mensagens de commit.
 git config --global core.autocrlf input   # Linux/Mac
 git config --global core.autocrlf true    # Windows
+
+# Clonar o repositório
+git clone git@github.com:mangabyte/surucursed.git
 ```
 
 ## Visual Studio Code
