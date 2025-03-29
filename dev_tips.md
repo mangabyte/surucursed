@@ -111,8 +111,9 @@ Fluxo Ideal de Trabalho:
 
 Ao submeter uma alteração, lembre de fazer os testes antes de criar o Pull
 Request.
-Faça a atribuição de todos do projeto para fazer a verificação do código.
-(Esta parte é em assignee, ao lado do PR.)
+Faça a requisição para todos fazerem o review do código, marcando todos do
+projeto. (Esta parte é em Reviewers, ao lado do PR.)
+Adicione você, como responsável por aquele PR, em assignee
 Coloque uma descrição do que você realizou e descreva o máximo possível da
 lógica utilizada para facilitar o trabalho de quem vai fazer o code review.
 Lembrem-se de não ficarem chateados com possíveis request changes (pedido de
