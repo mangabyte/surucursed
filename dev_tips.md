@@ -139,18 +139,24 @@ Tenha a extensão [.editorconfig](https://marketplace.visualstudio.com/items?ite
 
 ### Outras extensões úteis
 
-**C/C++ (Microsoft) / C/C++ Extension Pack***: Autocompletar e debug.
-**C/C++ Compile Run**: Para criar um botão e facilitar a compilação do código.
-**SDL Snippets**: Atalhos para código SDL.
-**Code Runner**: Executar código rapidamente (Ctrl+Alt+N).
-**GitLens**: Visualizar histórico do código.
-**Cmake/Cmake Tools**: Autocompletar e dar suporte ao CMake no VSCode.
-**Code Spell Checker**: Verificar erros ortográficos.
-**Portuguese - Code Spell Checker**: Dicionário de português do Code Spell
-Checker.
-**Code Snap**: Tirar screenshots do código para ficar mais fácil de enviar e
-visualizar por outras pessoas.
-**WakaTime**: Para calcular seu tempo gasto no projeto e em outros códigos
-(Útil caso precise comprovar horas).
-**Discord Presence**: Atualize seu status no Discord para mostrar que você está
-programando em determinado projeto/arquivo.
+#### **Desenvolvimento em C/SDL**  
+- **C/C++ (Microsoft) / C/C++ Extension Pack**: Autocompletar, debug e suporte avançado para C/C++.  
+- **CMake/CMake Tools**: Suporte para autocompletar e gerenciamento de projetos CMake.  
+- **SDL Snippets**: Atalhos para funções e estruturas da SDL.  
+
+#### **Produtividade**  
+- **Code Runner**: Execute trechos de código rapidamente com `Ctrl+Alt+N`.  
+- **C/C++ Compile Run**: Botão para compilar e executar projetos em C diretamente na interface.
+- **Error Lens**: Destaca erros na linha inteira
+
+#### **Qualidade de Código**  
+- **Code Spell Checker**: Verificação ortográfica em comentários e textos.  
+- **Portuguese - Code Spell Checker**: Dicionário em português para o Spell Checker.  
+
+#### **Controle de Versão (Git)**  
+- **GitLens**: Histórico de alterações, blame e insights sobre o código.  
+
+#### **Extras Úteis**  
+- **Code Snap**: Tire screenshots estilizadas do código para compartilhar.  
+- **WakaTime**: Mede o tempo gasto no projeto (útil para métricas de produtividade).  
+- **Discord Presence**: Mostra no Discord o que você está codificando.  
