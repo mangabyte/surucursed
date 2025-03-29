@@ -88,12 +88,12 @@ git push
 
 ```markdown
 ### Exemplos de Commits
-| Tipo     | Mensagem                                   |
-|----------|----------------------------------------|
-| feat      | `feat: adicionar menu de pausa`  |
-| fix        | `fix: corrigir colisão da cobra`    |
-| docs     | `docs: atualizar guia de estilo`    |
-| chore   | `chore: atualizar dependências`   |
+| Tipo     | Mensagem                         |
+|----------|----------------------------------|
+| feat     | `feat: adicionar menu de pausa`  |
+| fix       | `fix: corrigir colisão da cobra`  |
+| docs     | `docs: atualizar guia de estilo` |
+| chore    | `chore: atualizar dependências`  |
 ```
 
 ## Github
