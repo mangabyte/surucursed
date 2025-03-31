@@ -30,7 +30,7 @@ Tenha a extensão [.editorconfig](https://marketplace.visualstudio.com/items?ite
 ## SDL
 
 No windows:
-Clone o projeto e crie uma nova pasta com o nome "SDL2" na raiz do projeto. Baixe o arquivo "SDL2-devel-2.32.2-mingw.tar.gz" no site https://github.com/libsdl-org/SDL/releases. Extraia o arquivo instalado fora do projeto. Após a extrair, vá em "\SDL2-2.32.2\i686-w64-mingw32", copie as pastas "include" e "lib" para a pasta "SDL2" do projeto. Por fim, ainda no arquivo extraido, vá em "\SDL2-2.32.2\i686-w64-mingw32\bin" e copie a pasta SDL2.dll para a raiz do projeto.
+Clone o projeto e crie uma nova pasta com o nome "SDL2" na raiz do projeto. Baixe o arquivo "SDL2-devel-2.32.2-mingw.tar.gz" no site https://github.com/libsdl-org/SDL/releases. Extraia o arquivo instalado fora do projeto. Após a extrair, vá em "\SDL2-2.32.2\i686-w64-mingw32", copie as pastas "include" e "lib" para a pasta "SDL2" do projeto. Por fim, ainda no arquivo extraido, vá em "\SDL2-2.32.2\i686-w64-mingw32\bin" e copie o arquivo SDL2.dll para a raiz do projeto.
 
 No linux:
 Use o comando 
