@@ -96,22 +96,42 @@ void setup()
   // Colocando uma fruta no mapa para testagem
   mapMatrix[28][10].type = FRUIT_TILE;
 }
-void process_input()
-{
-  // Auto-explicativo
-  SDL_Event event;
-  SDL_PollEvent(&event);
 
-  switch (event.type)
-  {
-    case SDL_QUIT:
-      game_is_running = FALSE;
-      break;
-    case SDL_KEYDOWN:
-      if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
-      break;
-  }
+  void process_input() {
+    SDL_Event event;
+    SDL_PollEvent(&event);
+
+    switch (event.type)
+    {
+        case SDL_QUIT:
+            game_is_running = FALSE;
+            break;
+        case SDL_KEYDOWN:
+            if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
+            if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
+                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != DOWN) {
+                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = UP;
+                }
+            }
+            if (event.key.keysym.sym == SDLK_a || event.key.keysym.sym == SDLK_LEFT) {
+                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != RIGHT) {
+                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = LEFT;
+                }
+            }
+            if (event.key.keysym.sym == SDLK_s || event.key.keysym.sym == SDLK_DOWN) {
+                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != UP) {
+                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = DOWN;
+                }
+            }
+            if (event.key.keysym.sym == SDLK_d || event.key.keysym.sym == SDLK_RIGHT) {
+                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != LEFT) {
+                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = RIGHT;
+                }
+            }
+            break;
+    }
 }
+
 void update()
 {
 
