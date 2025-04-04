@@ -13,3 +13,8 @@ bin/
 # SDL
 *.dll
 *.so
+SDL2
+
+# Executáveis
+game
+game.exe
