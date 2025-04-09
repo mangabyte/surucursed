@@ -2,6 +2,7 @@
 #include "./constants.h"
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
+#include <stdio.h>
 
 // O tamanho do "Tabuleiro" em quantidade de quadrados que a cobra está
 #define MATRIX_WIDTH 30
@@ -12,7 +13,13 @@
 #define CELL_WIDTH WINDOW_WIDTH/MATRIX_WIDTH
 #define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
 
-// Definido na main, quando 0 o jogo para após executar a renderização
+// MACROS com os parametros de cores (RGB alpha)
+#define RED 255,0,0,255
+#define GREEN 0,255,0,255
+#define MANGENTA 255,0,255,255
+#define BLACK 0,0,0,255
+
+// Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
 extern int game_is_running;
 
 // Definindo o enum indica o que
@@ -49,14 +56,6 @@ typedef union mapTile
 // inferior esquerdo
 mapTile mapMatrix[MATRIX_WIDTH][MATRIX_HEIGHT];
 
-// Definição de funçoes que retornam a posição
-// do centro da celula na tela em função da
-// posição dele na matrix.
-// São usadas na renderização de cada celula
-int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
-int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
-
-
 // Definição da posição da cabeça da cobra na matrix
 int snake_headX;
 int snake_headY;
@@ -64,6 +63,31 @@ int snake_headY;
 // Definição da posição da cauda da cobra na matrix
 int snake_tailX;
 int snake_tailY;
+
+// Tamanho da cobra em células
+int snake_size;
+
+// --Funções para renderização --
+
+// Definição de funçoes que retornam a posição
+// do centro da celula na tela em função da
+// posição dele na matrix.
+int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
+int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
+
+// Definição de uma função que dá as específicações
+// de desenho de um retângulo
+SDL_Rect rectFromCellPos(int cell_posX, int cell_posY)
+{
+  return (SDL_Rect){
+    MatrixToWindowX(cell_posX) - CELL_WIDTH/2,
+    MatrixToWindowY(cell_posY) - CELL_HEIGHT/2,
+    CELL_WIDTH,
+    CELL_HEIGHT
+  };
+}
+
+// --Game Loop--
 
 void setup()
 {
@@ -93,6 +117,8 @@ void setup()
   mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
   mapMatrix[5][3].snake = (snakeTile){SNAKE_TILE,DOWN};
 
+  snake_size = 7;
+
   // Colocando uma fruta no mapa para testagem
   mapMatrix[28][10].type = FRUIT_TILE;
 }
@@ -116,102 +142,105 @@ void update()
 {
 
 }
+
 void render(SDL_Renderer* renderer)
 {
-  // Percorre toda matriz
-  for(int i = 0; i < MATRIX_WIDTH; i++)
+  SDL_SetRenderDrawColor(renderer, BLACK);
+  SDL_RenderClear(renderer);
+
+  SDL_Rect rect;
+
+  int cell_posX;
+  int cell_posY;
+
+  cell_posX = snake_tailX;
+  cell_posY = snake_tailY;
+
+  for(int i = 0; i < snake_size; i++)
   {
-    for(int j = 0; j < MATRIX_HEIGHT; j++)
+    if(mapMatrix[cell_posX][cell_posY].type != SNAKE_TILE)
     {
-      // Pega a posição na tela da célula atual
-      int window_x = MatrixToWindowX(i);
-      int window_y = MatrixToWindowY(j);
+      rect = rectFromCellPos(cell_posX, cell_posY);
 
+      fprintf(stderr,"A cobra termina antes do tamanho informado em [%d][%d].\n",cell_posX,cell_posY);
+
+      game_is_running = FALSE;
+      break;
+    }
+    rect = rectFromCellPos(cell_posX, cell_posY);
+
+    // Coloca a cor a ser desenhada (Verde)
+    SDL_SetRenderDrawColor(renderer, GREEN);
+
+    // Desenha um quadrado na célula
+    SDL_RenderFillRect(renderer, &rect);
+
+    // Coloca a cor a ser desenhada (Vermelha)
+    SDL_SetRenderDrawColor(renderer, RED);
+
+    // Salva as direções da cobra
+    // Move o ponteiro para a proxima casa
+    char dirX = 0;
+    char dirY = 0;
+
+    // Atualiza a direção a ser renderizada da cobra e
+    // registra o movimento efetuado
+    switch (mapMatrix[cell_posX][cell_posY].snake.forwardDirection)
+    {
+      case UP:
+        cell_posY++;
+        dirY = 1;
+        break;
+      case DOWN:
+        cell_posY--;
+        dirY = -1;
+        break;
+      case LEFT:
+        cell_posX--;
+        dirX = -1;
+        break;
+      case RIGHT:
+        cell_posX++;
+        dirX = 1;
+        break;
+    }
+
+    // Desenha as linhas que indicam a forwardDirection da atual parte da cobra
+    SDL_RenderDrawLine(renderer,
+      MatrixToWindowX(cell_posX - dirX),
+      MatrixToWindowY(cell_posY - dirY),
+      MatrixToWindowX(cell_posX - dirX) + dirX*( CELL_WIDTH/2),
+      MatrixToWindowY(cell_posY - dirY) + dirY*(-CELL_HEIGHT/2)
+    );
+  }
+
+  // Percorre toda matriz
+  for(int cell_posX = 0; cell_posX < MATRIX_WIDTH; cell_posX++)
+  {
+    for(int cell_posY = 0; cell_posY < MATRIX_HEIGHT; cell_posY++)
+    {
       // Define um quadrado na posição da célula
-      SDL_Rect rect =
-      {
-        window_x - CELL_WIDTH/2,
-        window_y - CELL_HEIGHT/2,
-        CELL_WIDTH,
-        CELL_HEIGHT
-      };
+      rect = rectFromCellPos(cell_posX, cell_posY);
 
-      switch (mapMatrix[i][j].type)
+      switch (mapMatrix[cell_posX][cell_posY].type)
       {
         case EMPTY_TILE:
-          // Coloca a cor a ser desenhada (Preta)
-          SDL_SetRenderDrawColor(renderer,
-            0,
-            0,
-            0,
-            255);
-
-          // Desenha um quadrado na célula
-          SDL_RenderFillRect(renderer, &rect);
           break;
-
 
         case SNAKE_TILE:
-          // Coloca a cor a ser desenhada (Verde)
-          SDL_SetRenderDrawColor(renderer,
-            0,
-            255,
-            0,
-            255);
-
-          // Desenha um quadrado na célula
-          SDL_RenderFillRect(renderer, &rect);
-
-          // Coloca a cor a ser desenhada (Vermelha)
-          SDL_SetRenderDrawColor(renderer,
-            255,
-            0,
-            0,
-            255);
-
-          // Desenha uma linha indicando a direção do pedaço da cobra
-          switch (mapMatrix[i][j].snake.forwardDirection)
-          {
-            case UP:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x, window_y - CELL_HEIGHT/2);
-              break;
-            case DOWN:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x, window_y + CELL_HEIGHT/2);
-              break;
-            case LEFT:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x - CELL_WIDTH/2, window_y);
-              break;
-            case RIGHT:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x + CELL_WIDTH/2, window_y);
-              break;
-          }
           break;
-
 
         case FRUIT_TILE:
           // Coloca a cor a ser desenhada (Vermelha)
-          SDL_SetRenderDrawColor(renderer,
-            255,
-            0,
-            0,
-            255);
+          SDL_SetRenderDrawColor(renderer, RED);
 
           // Desenha um quadrado na célula
           SDL_RenderFillRect(renderer, &rect);
           break;
 
-
         default:
           // Coloca a cor a ser desenhada (Mangenta)
-          SDL_SetRenderDrawColor(renderer,
-            255,
-            0,
-            255,
-            255);
+          SDL_SetRenderDrawColor(renderer, MANGENTA);
 
           // Desenha um quadrado na célula
           SDL_RenderFillRect(renderer, &rect);
