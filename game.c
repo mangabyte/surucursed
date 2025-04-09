@@ -19,7 +19,7 @@
 #define MANGENTA 255,0,255,255
 #define BLACK 0,0,0,255
 
-// Definido na main, quando 0 o jogo para após executar a renderização
+// Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
 extern int game_is_running;
 
 // Definindo o enum indica o que
@@ -86,6 +86,8 @@ SDL_Rect rectFromCellPos(int cell_posX, int cell_posY)
     CELL_HEIGHT
   };
 }
+
+// --Game Loop--
 
 void setup()
 {
@@ -181,6 +183,8 @@ void render(SDL_Renderer* renderer)
     char dirX = 0;
     char dirY = 0;
 
+    // Atualiza a direção a ser renderizada da cobra e
+    // registra o movimento efetuado
     switch (mapMatrix[cell_posX][cell_posY].snake.forwardDirection)
     {
       case UP:
