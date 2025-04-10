@@ -2,6 +2,7 @@
 #include "./constants.h"
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
+#include <stdio.h>
 
 // O tamanho do "Tabuleiro" em quantidade de quadrados que a cobra está
 #define MATRIX_WIDTH 30
@@ -11,6 +12,10 @@
 // (Isso foi feito para melhorar a legibilidade)
 #define CELL_WIDTH WINDOW_WIDTH/MATRIX_WIDTH
 #define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
+
+//
+Uint32 last_update_time = 0;
+const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
 
 // Definido na main, quando 0 o jogo para após executar a renderização
 extern int game_is_running;
@@ -56,6 +61,8 @@ mapTile mapMatrix[MATRIX_WIDTH][MATRIX_HEIGHT];
 int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
 int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
 
+// Definição da variavel que delega o delay do movimento da cobra
+unsigned int last_movement_time = 0;
 
 // Definição da posição da cabeça da cobra na matrix
 int snake_headX;
@@ -67,6 +74,9 @@ int snake_tailY;
 
 void setup()
 {
+
+  last_update_time = SDL_GetTicks();
+
   // Iniciando toda a matriz como vazia
   for(int i = 0; i < MATRIX_WIDTH; i++)
   {
@@ -81,15 +91,10 @@ void setup()
   snake_headY = 3;
 
   // Iniciando posição da cauda da cobra
-  snake_tailX = 2;
-  snake_tailY = 2;
+  snake_tailX = 5;
+  snake_tailY = 4;
 
   // Iniciando as posições iniciais da cobra
-  mapMatrix[2][2].snake = (snakeTile){SNAKE_TILE,UP};
-  mapMatrix[2][3].snake = (snakeTile){SNAKE_TILE,UP};
-  mapMatrix[2][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
-  mapMatrix[3][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
-  mapMatrix[4][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
   mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
   mapMatrix[5][3].snake = (snakeTile){SNAKE_TILE,DOWN};
 
@@ -108,7 +113,10 @@ void setup()
             break;
         case SDL_KEYDOWN:
             if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
+
+            //Captura as teclas UP/w , DOWN/s , LEFT/a , RIGHT/d e muda a direção da cabeça da cobra
             if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
+                // Se a posição da cobra for contrária a da tecla, não move
                 if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != DOWN) {
                     mapMatrix[snake_headX][snake_headY].snake.forwardDirection = UP;
                 }
@@ -134,8 +142,78 @@ void setup()
 
 void update()
 {
+    // Verifica se já passou o tempo necessário para a próxima atualização
+    Uint32 current_time = SDL_GetTicks();
+    if (current_time - last_update_time < update_interval) {
+        return;  // Ainda não é hora de atualizar
+    }
+    last_update_time = current_time;
 
+    // O resto da função update() permanece igual
+    // Move a cobra baseada na sua direção
+    int new_headX = snake_headX;
+    int new_headY = snake_headY;
+
+    switch (mapMatrix[snake_headX][snake_headY].snake.forwardDirection)
+    {
+        case UP:
+            new_headY++;
+            break;
+        case DOWN:
+            new_headY--;
+            break;
+        case LEFT:
+            new_headX--;
+            break;
+        case RIGHT:
+            new_headX++;
+            break;
+    }
+
+    // Caso a cobra bata na parede
+    if (new_headX < 0 || new_headX >= MATRIX_WIDTH || new_headY < 0 || new_headY >= MATRIX_HEIGHT) {
+        return;
+    }
+
+    // Caso a nova posição da cabeça seja uma fruta
+    if (mapMatrix[new_headX][new_headY].type == FRUIT_TILE) {
+        // Implementar código para comer fruta
+    } else {
+        // Move a cobra deslocando o corpo
+
+        // Encontra a próxima posição da cauda
+        int next_tailX = snake_tailX;
+        int next_tailY = snake_tailY;
+
+        switch (mapMatrix[snake_tailX][snake_tailY].snake.forwardDirection) {
+            case UP:
+                next_tailY++;
+                break;
+            case DOWN:
+                next_tailY--;
+                break;
+            case LEFT:
+                next_tailX--;
+                break;
+            case RIGHT:
+                next_tailX++;
+                break;
+        }
+
+        // Limpa a posição da cauda
+        mapMatrix[snake_tailX][snake_tailY].type = EMPTY_TILE;
+
+        // Atualiza a posição da cauda
+        snake_tailX = next_tailX;
+        snake_tailY = next_tailY;
+    }
+
+    // Atualiza a posição da cabeça
+    mapMatrix[new_headX][new_headY].snake = (snakeTile){SNAKE_TILE, mapMatrix[snake_headX][snake_headY].snake.forwardDirection};
+    snake_headX = new_headX;
+    snake_headY = new_headY;
 }
+
 void render(SDL_Renderer* renderer)
 {
   // Percorre toda matriz
