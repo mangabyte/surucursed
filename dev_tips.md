@@ -135,57 +135,66 @@ Quaisquer dúvidas não devem ser deixadas de lado e podem criar uma issue
 (preferível) ou enviar mensagem no grupo de WhatsApp. Dê preferência a criar uma
 [issue](https://github.com/mangabyte/surucursed/issues)
 
-Tenha a extensão [.editorconfig](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig) instalada.
+Tenha a extensão **[EditorConfig for VS Code (EditorConfig)](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig)** instalada.
 
 ### Outras extensões úteis
 
-#### **Desenvolvimento em C/SDL**  
-- **C/C++ (Microsoft) / C/C++ Extension Pack**: Autocompletar, debug e suporte avançado para C/C++.  
-- **CMake/CMake Tools**: Suporte para autocompletar e gerenciamento de projetos CMake.  
-- **SDL Snippets**: Atalhos para funções e estruturas da SDL.  
+#### **Desenvolvimento em C/SDL**
 
-#### **Produtividade**  
-- **Code Runner**: Execute trechos de código rapidamente com `Ctrl+Alt+N`.  
-- **C/C++ Compile Run**: Botão para compilar e executar projetos em C diretamente na interface.
-- **Error Lens**: Destaca erros na linha inteira
+- **[C/C++ (Microsoft)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)**: IntelliSense e debug para C.
+- **[C/C++ (Microsoft) / C/C++ Extension Pack (Microsoft)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)**: Autocompletar, debug e suporte avançado para C/C++.
+- **[CMake/CMake Tools (Microsoft)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)**: Suporte para autocompletar e gerenciamento de projetos CMake.
 
-#### **Qualidade de Código**  
-- **Code Spell Checker**: Verificação ortográfica em comentários e textos.  
-- **Portuguese - Code Spell Checker**: Dicionário em português para o Spell Checker.  
+#### **Produtividade**
 
-#### **Controle de Versão (Git)**  
-- **GitLens**: Histórico de alterações, blame e insights sobre o código.  
+- **[C/C++ Compile Run (danielpinto8zz6)](https://marketplace.visualstudio.com/items?itemName=danielpinto8zz6.c-cpp-compile-run)**: Botão para compilar e executar projetos em C diretamente na interface.
+- **[Error Lens (Alexander)](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)**: Destaca erros na linha inteira
+- **[CodeLLDB (Vadim Chugunov)](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)**: Debugger nativo do VS Code - e que funciona em C.
 
-#### **Extras Úteis**  
-- **Code Snap**: Tire screenshots estilizadas do código para compartilhar.  
-- **WakaTime**: Mede o tempo gasto no projeto (útil para métricas de produtividade).  
-- **Discord Presence**: Mostra no Discord o que você está codificando.  
+#### **Qualidade de Código**
+
+- **[Code Spell Checker (Street Side Software)](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)**: Verificação ortográfica em comentários e textos.
+- **[Portuguese - Code Spell Checker (Street Side Software)](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker-portuguese)**: Dicionário em português para o Spell Checker.
+
+#### **Controle de Versão (Git)**
+
+- **[GitLens (GitKraken)](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)**: Histórico de alterações, blame e insights sobre o código.
+
+#### **Extras Úteis**
+
+- **[Code Snap (adpyke)](https://marketplace.visualstudio.com/items?itemName=adpyke.codesnap)**: Tire screenshots estilizadas do código para compartilhar.
+- **[WakaTime (WakaTime)](https://marketplace.visualstudio.com/items?itemName=WakaTime.vscode-wakatime)**: Mede o tempo gasto no projeto (útil para métricas de produtividade).
+- **[Discord Presence (Crawl)](https://marketplace.visualstudio.com/items?itemName=icrawl.discord-vscode)**: Mostra no Discord o que você está codificando.
+- **[C/C++ Themes (Microsoft)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools-themes)**: Tema para o VS Code em C
 
 ## SDL
 
-### No windows:
+### No windows
 
 - Clone o projeto e crie uma nova pasta com o nome "SDL2" na raiz do projeto.
 - Baixe o arquivo "[SDL2-devel-2.32.2-mingw.tar.gz](https://github.com/libsdl-org/SDL/releases)".
-- Extraia o arquivo instalado fora do projeto. 
-- Após a extrair, vá em "\SDL2-2.32.2\i686-w64-mingw32", copie as pastas "include" e "lib" para a pasta "SDL2" do projeto. 
+- Extraia o arquivo instalado fora do projeto.
+- Após a extrair, vá em "\SDL2-2.32.2\i686-w64-mingw32", copie as pastas "include" e "lib" para a pasta "SDL2" do projeto.
 - Por fim, ainda no arquivo extraido, vá em "\SDL2-2.32.2\i686-w64-mingw32\bin" e copie o arquivo SDL2.dll para a raiz do projeto.
 
-### No linux:
+### No linux
 
-Use o comando 
+Use o comando
+
 ```bash
 yay -S sdl2
 ```
 
 ### Gerando o executável
 
-#### No windows: 
+#### Usando windows
+
 ```bash
 gcc -Wall -std=c99 -I SDL2/include -L SDL2/lib ./*.c -lmingw32 -lSDL2main -lSDL2 -lm -o game
 ```
 
-#### No linux:
+#### Usando linux
+
 ```bash
 gcc -Wall -std=c99 ./*.c -lSDL2 -lm -o game
 ```
