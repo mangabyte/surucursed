@@ -246,7 +246,14 @@ void render(SDL_Renderer* renderer)
 
     // Desenha um quadrado na célula
     SDL_RenderFillRect(renderer, &rect);
-
+    // Adiciona detalhe à fruta (um círculo ou ponto no centro)
+    SDL_SetRenderDrawColor(renderer, GREEN);
+    SDL_Rect stem = {
+  MatrixToWindowX(cell_posX) - 2, 
+  MatrixToWindowY(cell_posY) + CELL_HEIGHT/4, 
+  4, 4
+};
+SDL_RenderFillRect(renderer, &stem);
     // Coloca a cor a ser desenhada (Vermelha)
     SDL_SetRenderDrawColor(renderer, RED);
 
