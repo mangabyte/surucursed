@@ -200,7 +200,19 @@ void process_input()
 }
 void update()
 {
-
+  Uint32 current_time = SDL_GetTicks();
+  
+  // Verifica se é hora de mover a cobra
+  if (current_time >= next_move_time) {
+    move_snake();
+    next_move_time = current_time + move_delay;
+  }
+  
+  // Verifica se é hora de gerar uma nova fruta
+  if (current_time >= next_fruit_time) {
+    spawn_fruit();
+    next_fruit_time = current_time + fruit_spawn_delay;
+  }
 }
 
 void render(SDL_Renderer* renderer)
