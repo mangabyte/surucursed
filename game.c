@@ -70,12 +70,30 @@ int snake_tailY;
 // Tamanho da cobra em células
 int snake_size;
 
+
+
+
+
 // Aqui vao algumas alteracoes: 
 
 // Tempo para a próxima movimentação da cobra
 Uint32 next_move_time;
 // Tempo entre movimentos (velocidade da cobra em ms)
 Uint32 move_delay = 300;
+
+
+
+
+// Variáveis para controle das frutas
+int fruit_count = 0;         // Quantidade atual de frutas no mapa
+int max_fruits = 3;          // Máximo de frutas simultâneas no mapa
+Uint32 next_fruit_time;      // Tempo para a próxima geração de fruta
+Uint32 fruit_spawn_delay = 5000; // Tempo entre frutas em ms
+
+// Estrutura para pontuação
+int score = 0;
+
+
 
 // --Funções para renderização --
 
