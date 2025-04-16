@@ -97,6 +97,38 @@ int score = 0;
 
 // --Funções para renderização --
 
+
+
+
+
+
+// Função para gerar uma nova fruta em posição aleatória
+void spawn_fruit() {
+  if (fruit_count >= max_fruits) return;
+  
+  int attempts = 0;
+  int max_attempts = 100; // Evita loop infinito
+  
+  while (attempts < max_attempts) {
+      int x = rand() % MATRIX_WIDTH;
+      int y = rand() % MATRIX_HEIGHT;
+      
+      // Verifica se a posição está vazia
+      if (mapMatrix[x][y].type == EMPTY_TILE) {
+          mapMatrix[x][y].type = FRUIT_TILE;
+          fruit_count++;
+          return;
+      }
+      attempts++;
+  }
+  
+  // Se não conseguiu posicionar após várias tentativas
+  fprintf(stderr, "Não foi possível posicionar a fruta após %d tentativas.\n", max_attempts);
+}
+
+
+
+
 // Definição de funçoes que retornam a posição
 // do centro da celula na tela em função da
 // posição dele na matrix.
