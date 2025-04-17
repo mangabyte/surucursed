@@ -13,6 +13,17 @@
 #define CELL_WIDTH WINDOW_WIDTH/MATRIX_WIDTH
 #define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
 
+
+// MACROS com as coordenadas iniciais da cabeça e da cauda da cobra
+#define SNAKE_TAILX 5
+#define SNAKE_TAILY 4
+#define SNAKE_HEADX 5
+#define SNAKE_HEADY 3
+
+// Variaveis para gerir o tempo de jogo para movimentação da cobrinha
+Uint32 last_update_time = 0;
+const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
+
 // MACROS com os parametros de cores (RGB alpha)
 #define RED 255,0,0,255
 #define GREEN 0,255,0,255
