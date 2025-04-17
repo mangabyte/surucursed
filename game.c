@@ -14,6 +14,12 @@
 #define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
 
 //
+#define SNAKE_TAILX 5
+#define SNAKE_TAILY 4
+#define SNAKE_HEADX 5
+#define SNAKE_HEADY 3
+
+//
 Uint32 last_update_time = 0;
 const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
 
@@ -75,6 +81,7 @@ int snake_tailY;
 void setup()
 {
 
+  //Definir
   last_update_time = SDL_GetTicks();
 
   // Iniciando toda a matriz como vazia
@@ -87,12 +94,12 @@ void setup()
   }
 
   // Iniciando posição da cabeça da cobra
-  snake_headX = 5;
-  snake_headY = 3;
+  snake_headX = SNAKE_HEADX;
+  snake_headY = SNAKE_HEADY;
 
   // Iniciando posição da cauda da cobra
-  snake_tailX = 5;
-  snake_tailY = 4;
+  snake_tailX = SNAKE_TAILX;
+  snake_tailY = SNAKE_TAILY;
 
   // Iniciando as posições iniciais da cobra
   mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
@@ -100,6 +107,9 @@ void setup()
 
   // Colocando uma fruta no mapa para testagem
   mapMatrix[28][10].type = FRUIT_TILE;
+  mapMatrix[26][8].type = FRUIT_TILE;
+  mapMatrix[24][6].type = FRUIT_TILE;
+
 }
 
   void process_input() {
@@ -108,36 +118,36 @@ void setup()
 
     switch (event.type)
     {
-        case SDL_QUIT:
-            game_is_running = FALSE;
-            break;
-        case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
+      case SDL_QUIT:
+        game_is_running = FALSE;
+        break;
+      case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
 
-            //Captura as teclas UP/w , DOWN/s , LEFT/a , RIGHT/d e muda a direção da cabeça da cobra
-            if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
-                // Se a posição da cobra for contrária a da tecla, não move
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != DOWN) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = UP;
-                }
-            }
-            if (event.key.keysym.sym == SDLK_a || event.key.keysym.sym == SDLK_LEFT) {
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != RIGHT) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = LEFT;
-                }
-            }
-            if (event.key.keysym.sym == SDLK_s || event.key.keysym.sym == SDLK_DOWN) {
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != UP) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = DOWN;
-                }
-            }
-            if (event.key.keysym.sym == SDLK_d || event.key.keysym.sym == SDLK_RIGHT) {
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != LEFT) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = RIGHT;
-                }
-            }
-            break;
-    }
+          //Captura as teclas UP/w , DOWN/s , LEFT/a , RIGHT/d e muda a direção da cabeça da cobra
+          if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
+              // Se a posição da cobra for contrária a da tecla, não move
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != DOWN) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = UP;
+              }
+          }
+          if (event.key.keysym.sym == SDLK_a || event.key.keysym.sym == SDLK_LEFT) {
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != RIGHT) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = LEFT;
+              }
+          }
+          if (event.key.keysym.sym == SDLK_s || event.key.keysym.sym == SDLK_DOWN) {
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != UP) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = DOWN;
+              }
+          }
+          if (event.key.keysym.sym == SDLK_d || event.key.keysym.sym == SDLK_RIGHT) {
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != LEFT) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = RIGHT;
+              }
+          }
+          break;
+  }
 }
 
 void update()
@@ -174,6 +184,11 @@ void update()
     if (new_headX < 0 || new_headX >= MATRIX_WIDTH || new_headY < 0 || new_headY >= MATRIX_HEIGHT) {
         return;
     }
+
+    // Caso a nova posição da cabeça seja o corpo da cobra
+    if (mapMatrix[new_headX][new_headY].type == SNAKE_TILE) {
+      // Implementar código para colidir com o corpo
+  }
 
     // Caso a nova posição da cabeça seja uma fruta
     if (mapMatrix[new_headX][new_headY].type == FRUIT_TILE) {
