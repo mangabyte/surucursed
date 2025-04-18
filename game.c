@@ -72,6 +72,11 @@ int snake_headY;
 int snake_tailX;
 int snake_tailY;
 
+#define SNAKE_TAILX 5
+#define SNAKE_TAILY 4
+#define SNAKE_HEADX 5
+#define SNAKE_HEADY 3
+
 void setup()
 {
 
@@ -87,17 +92,16 @@ void setup()
   }
 
   // Iniciando posição da cabeça da cobra
-  snake_headX = 5;
-  snake_headY = 3;
+  snake_headX = SNAKE_HEADX;
+  snake_headY = SNAKE_HEADY;
 
   // Iniciando posição da cauda da cobra
-  snake_tailX = 5;
-  snake_tailY = 4;
+  snake_tailX = SNAKE_TAILX;
+  snake_tailY = SNAKE_TAILY;
 
   // Iniciando as posições iniciais da cobra
-  mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
-  mapMatrix[5][3].snake = (snakeTile){SNAKE_TILE,DOWN};
-
+  mapMatrix[snake_tailX][snake_tailY].snake = (snakeTile){SNAKE_TILE,DOWN};
+  mapMatrix[snake_headX][snake_headY].snake = (snakeTile){SNAKE_TILE,DOWN};
   // Colocando uma fruta no mapa para testagem
   mapMatrix[28][10].type = FRUIT_TILE;
 }
