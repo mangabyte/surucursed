@@ -90,12 +90,6 @@ int snake_size;
 
 // --Funções para renderização --
 
-// Definição de funçoes que retornam a posição
-// do centro da celula na tela em função da
-// posição dele na matrix.
-int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
-int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
-
 // Definição de uma função que dá as específicações
 // de desenho de um retângulo
 SDL_Rect rectFromCellPos(int cell_posX, int cell_posY)
@@ -137,7 +131,7 @@ void setup()
   mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
   mapMatrix[5][3].snake = (snakeTile){SNAKE_TILE,DOWN};
 
-  snake_size = 7;
+  snake_size = 2;
 
   // Colocando uma fruta no mapa para testagem
   mapMatrix[28][10].type = FRUIT_TILE;
@@ -261,9 +255,6 @@ void update()
     mapMatrix[new_headX][new_headY].snake = (snakeTile){SNAKE_TILE, mapMatrix[snake_headX][snake_headY].snake.forwardDirection};
     snake_headX = new_headX;
     snake_headY = new_headY;
-}
-
-
 }
 
 void render(SDL_Renderer* renderer)
