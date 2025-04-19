@@ -13,6 +13,16 @@
 #define CELL_WIDTH WINDOW_WIDTH/MATRIX_WIDTH
 #define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
 
+// MACROS com as coordenadas iniciais da cabeça e da cauda da cobra
+#define SNAKE_TAILX 5
+#define SNAKE_TAILY 4
+#define SNAKE_HEADX 2
+#define SNAKE_HEADY 2
+
+// Variaveis para gerir o tempo de jogo para movimentação da cobrinha
+Uint32 last_update_time = 0;
+const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
+
 // MACROS com os parametros de cores (RGB alpha)
 #define RED 255,0,0,255
 #define GREEN 0,255,0,255
@@ -55,13 +65,6 @@ typedef union mapTile
 // do mapa, a posição [0][0] é o canto
 // inferior esquerdo
 mapTile mapMatrix[MATRIX_WIDTH][MATRIX_HEIGHT];
-
-// Definição de funçoes que retornam a posição
-// do centro da celula na tela em função da
-// posição dele na matrix.
-// São usadas na renderização de cada celula
-int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
-int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
 
 // Definição da variavel que delega o delay do movimento da cobra
 unsigned int last_movement_time = 0;
@@ -123,12 +126,17 @@ void setup()
   snake_tailY = SNAKE_TAILY;
 
   // Iniciando as posições iniciais da cobra
+  mapMatrix[2][2].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[2][3].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[2][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[3][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[4][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
   mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
   mapMatrix[5][3].snake = (snakeTile){SNAKE_TILE,DOWN};
 
   snake_size = 7;
 
-  // Colocando uma fruta no mapa para testagem
+  // Colocando frutas no mapa para testagem
   mapMatrix[28][10].type = FRUIT_TILE;
   mapMatrix[26][8].type = FRUIT_TILE;
   mapMatrix[24][6].type = FRUIT_TILE;
@@ -252,8 +260,6 @@ void update()
     snake_headY = new_headY;
 }
 
-
-}
 
 void render(SDL_Renderer* renderer)
 {
