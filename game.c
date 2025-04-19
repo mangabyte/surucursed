@@ -2,16 +2,15 @@
 #include "./constants.h"
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 
 // O tamanho do "Tabuleiro" em quantidade de quadrados que a cobra está
-#define MATRIX_WIDTH 30
-#define MATRIX_HEIGHT 12
+#define MATRIX_WIDTH 20
+#define MATRIX_HEIGHT 20
 
-// O tamanho de cada celula("Quadradinho") do "Tabuleiro" na tela
-// (Isso foi feito para melhorar a legibilidade)
-#define CELL_WIDTH WINDOW_WIDTH/MATRIX_WIDTH
-#define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
+//Tamanho "ideal" que vai servir como base para comparar estimadamente o tamanho de cada quadradinho na tela
+#define IDEAL_CELL_SIZE WINDOW_WIDTH/MATRIX_WIDTH
 
 
 // MACROS com as coordenadas iniciais da cabeça e da cauda da cobra
@@ -29,6 +28,16 @@ const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
 #define GREEN 0,255,0,255
 #define MANGENTA 255,0,255,255
 #define BLACK 0,0,0,255
+
+// Variáveis para o viewport ajustado
+static SDL_Rect game_viewport = {0};
+static int cell_size = 0;  // Tamanho real das células (quadradas)
+
+//Definindo variáveis para os sprites
+SDL_Texture* snake_head_texture = NULL;
+SDL_Texture* snake_body_texture = NULL;
+SDL_Texture* fruit_texture = NULL;
+SDL_Texture* bg_texture = NULL;
 
 // Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
 extern int game_is_running;
@@ -71,8 +80,8 @@ mapTile mapMatrix[MATRIX_WIDTH][MATRIX_HEIGHT];
 // do centro da celula na tela em função da
 // posição dele na matrix.
 // São usadas na renderização de cada celula
-int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
-int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
+int MatrixToWindowX(int _matrixX) {return _matrixX*cell_size;}
+int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * cell_size);}
 
 // Definição da variavel que delega o delay do movimento da cobra
 unsigned int last_movement_time = 0;
@@ -90,15 +99,77 @@ int snake_size;
 
 // --Funções para renderização --
 
+// Função para calcular a área vizualizada contida na janela
+void calculate_viewport() {
+  // Calcula o tamanho máximo possível mantendo a proporção
+  int max_cell_width = WINDOW_WIDTH / MATRIX_WIDTH;
+  int max_cell_height = WINDOW_HEIGHT / MATRIX_HEIGHT;
+
+  // Usa o menor valor para manter células quadradas
+  cell_size = (max_cell_width < max_cell_height) ? max_cell_width : max_cell_height;
+
+  // Calcula a área centralizada
+  int game_width = MATRIX_WIDTH * cell_size;
+  int game_height = MATRIX_HEIGHT * cell_size;
+
+  game_viewport.x = (WINDOW_WIDTH - game_width) / 2;
+  game_viewport.y = (WINDOW_HEIGHT - game_height) / 2;
+  game_viewport.w = game_width;
+  game_viewport.h = game_height;
+}
+// Função para carregar os sprites
+void load_textures(SDL_Renderer* renderer) {
+  // Carrega a textura da cabeça da cobra
+  SDL_Surface* surface = IMG_Load("assets/snake_head.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar snake_head.png: %s\n", IMG_GetError());
+      return;
+  }
+  snake_head_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Carrega a textura do corpo da cobra
+  surface = IMG_Load("assets/snake_body.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar snake_body.png: %s\n", IMG_GetError());
+      return;
+  }
+  snake_body_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Carrega a textura da fruta
+  surface = IMG_Load("assets/fruit.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar fruit.png: %s\n", IMG_GetError());
+      return;
+  }
+  fruit_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Carrega a textura do Background
+  surface = IMG_Load("assets/bg.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar bg.png: %s\n", IMG_GetError());
+      return;
+  }
+  bg_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+}
+void cleanup_textures() {
+  if (snake_head_texture) SDL_DestroyTexture(snake_head_texture);
+  if (snake_body_texture) SDL_DestroyTexture(snake_body_texture);
+  if (fruit_texture) SDL_DestroyTexture(fruit_texture);
+  if (bg_texture) SDL_DestroyTexture(bg_texture);
+  IMG_Quit();
+}
 // Definição de uma função que dá as específicações
 // de desenho de um retângulo
-SDL_Rect rectFromCellPos(int cell_posX, int cell_posY)
-{
+SDL_Rect rectFromCellPos(int cell_posX, int cell_posY) {
   return (SDL_Rect){
-    MatrixToWindowX(cell_posX) - CELL_WIDTH/2,
-    MatrixToWindowY(cell_posY) - CELL_HEIGHT/2,
-    CELL_WIDTH,
-    CELL_HEIGHT
+      cell_posX * cell_size,
+      (MATRIX_HEIGHT - 1 - cell_posY) * cell_size,  // Inverte Y
+      cell_size,
+      cell_size
   };
 }
 
@@ -106,8 +177,15 @@ SDL_Rect rectFromCellPos(int cell_posX, int cell_posY)
 
 void setup()
 {
-
-  //Definir
+  calculate_viewport();
+  // Inicializa SDL_image
+  int imgFlags = IMG_INIT_PNG;
+  if (!(IMG_Init(imgFlags) & imgFlags)) {
+      fprintf(stderr, "SDL_image não pôde inicializar! SDL_image Error: %s\n", IMG_GetError());
+      game_is_running = FALSE;
+      return;
+  }
+  //Pegando o tick inicial, como um "millis" do sdl
   last_update_time = SDL_GetTicks();
 
   // Iniciando toda a matriz como vazia
@@ -183,11 +261,9 @@ void update()
     // Verifica se já passou o tempo necessário para a próxima atualização
     Uint32 current_time = SDL_GetTicks();
     if (current_time - last_update_time < update_interval) {
-        return;  // Ainda não é hora de atualizar
+        return;
     }
     last_update_time = current_time;
-
-    // O resto da função update() permanece igual
     // Move a cobra baseada na sua direção
     int new_headX = snake_headX;
     int new_headY = snake_headY;
@@ -256,112 +332,87 @@ void update()
     snake_headX = new_headX;
     snake_headY = new_headY;
 }
-
-void render(SDL_Renderer* renderer)
-{
+void render(SDL_Renderer* renderer) {
+  // Limpa toda a tela com preto
   SDL_SetRenderDrawColor(renderer, BLACK);
   SDL_RenderClear(renderer);
 
-  SDL_Rect rect;
+  // Define a área de renderização do jogo
+  SDL_RenderSetViewport(renderer, &game_viewport);
 
-  int cell_posX;
-  int cell_posY;
+  // ======= LAYERS (Camadas de renderização) =======
 
-  cell_posX = snake_tailX;
-  cell_posY = snake_tailY;
+  /* Layers não são literalmente programadas, mas por consequência da dinâmica,
+   uma render a frente se sobrepõe a uma anterior, portanto a separação em camadas
+   é puramente para organização!
+  */
 
-  for(int i = 0; i < snake_size; i++)
-  {
-    if(mapMatrix[cell_posX][cell_posY].type != SNAKE_TILE)
-    {
-      rect = rectFromCellPos(cell_posX, cell_posY);
+  // ===== Layer 0 =====
 
-      fprintf(stderr,"A cobra termina antes do tamanho informado em [%d][%d].\n",cell_posX,cell_posY);
-
-      game_is_running = FALSE;
-      break;
+  // Renderiza o background
+  for(int x = 0; x < MATRIX_WIDTH; x++) {
+    for(int y = 0; y < MATRIX_HEIGHT; y++) {
+        SDL_Rect dest_rect = { // Resumindo é a posição literal na tela (considerando a resolução)
+          x * cell_size,
+            (MATRIX_HEIGHT - 1 - y) * cell_size,
+            cell_size,
+            cell_size
+        };
+        SDL_RenderCopy(renderer, bg_texture, NULL, &dest_rect);
     }
-    rect = rectFromCellPos(cell_posX, cell_posY);
+}
 
-    // Coloca a cor a ser desenhada (Verde)
-    SDL_SetRenderDrawColor(renderer, GREEN);
+  // ====== Layer 1 ======
 
-    // Desenha um quadrado na célula
-    SDL_RenderFillRect(renderer, &rect);
-
-    // Coloca a cor a ser desenhada (Vermelha)
-    SDL_SetRenderDrawColor(renderer, RED);
-
-    // Salva as direções da cobra
-    // Move o ponteiro para a proxima casa
-    char dirX = 0;
-    char dirY = 0;
-
-    // Atualiza a direção a ser renderizada da cobra e
-    // registra o movimento efetuado
-    switch (mapMatrix[cell_posX][cell_posY].snake.forwardDirection)
-    {
-      case UP:
-        cell_posY++;
-        dirY = 1;
-        break;
-      case DOWN:
-        cell_posY--;
-        dirY = -1;
-        break;
-      case LEFT:
-        cell_posX--;
-        dirX = -1;
-        break;
-      case RIGHT:
-        cell_posX++;
-        dirX = 1;
-        break;
-    }
-
-    // Desenha as linhas que indicam a forwardDirection da atual parte da cobra
-    SDL_RenderDrawLine(renderer,
-      MatrixToWindowX(cell_posX - dirX),
-      MatrixToWindowY(cell_posY - dirY),
-      MatrixToWindowX(cell_posX - dirX) + dirX*( CELL_WIDTH/2),
-      MatrixToWindowY(cell_posY - dirY) + dirY*(-CELL_HEIGHT/2)
-    );
-  }
-
-  // Percorre toda matriz
-  for(int cell_posX = 0; cell_posX < MATRIX_WIDTH; cell_posX++)
-  {
-    for(int cell_posY = 0; cell_posY < MATRIX_HEIGHT; cell_posY++)
-    {
-      // Define um quadrado na posição da célula
-      rect = rectFromCellPos(cell_posX, cell_posY);
-
-      switch (mapMatrix[cell_posX][cell_posY].type)
-      {
-        case EMPTY_TILE:
-          break;
-
-        case SNAKE_TILE:
-          break;
-
-        case FRUIT_TILE:
-          // Coloca a cor a ser desenhada (Vermelha)
-          SDL_SetRenderDrawColor(renderer, RED);
-
-          // Desenha um quadrado na célula
-          SDL_RenderFillRect(renderer, &rect);
-          break;
-
-        default:
-          // Coloca a cor a ser desenhada (Mangenta)
-          SDL_SetRenderDrawColor(renderer, MANGENTA);
-
-          // Desenha um quadrado na célula
-          SDL_RenderFillRect(renderer, &rect);
+  // Renderiza a cobra
+  int cell_posX = snake_tailX;
+  int cell_posY = snake_tailY;
+  for(int i = 0; i < snake_size; i++) {
+      if(mapMatrix[cell_posX][cell_posY].type != SNAKE_TILE) {
+          fprintf(stderr, "Erro: Segmento de cobra faltando em [%d][%d]\n", cell_posX, cell_posY);
+          game_is_running = FALSE;
           break;
       }
-    }
+
+      SDL_Rect dest_rect = { // Resumindo é a posição literal na tela (considerando a resolução)
+          cell_posX * cell_size,
+          (MATRIX_HEIGHT - 1 - cell_posY) * cell_size,
+          cell_size,
+          cell_size
+      };
+
+      // Renderiza cabeça ou corpo
+      if (i == snake_size-1) { // Cabeça
+          SDL_RenderCopy(renderer, snake_head_texture, NULL, &dest_rect);
+      } else { // Corpo
+          SDL_RenderCopy(renderer, snake_body_texture, NULL, &dest_rect);
+      }
+
+      // Move para o próximo segmento
+      switch (mapMatrix[cell_posX][cell_posY].snake.forwardDirection) {
+          case UP: cell_posY++; break;
+          case DOWN: cell_posY--; break;
+          case LEFT: cell_posX--; break;
+          case RIGHT: cell_posX++; break;
+      }
   }
 
+  // Renderiza as frutas
+  for(int x = 0; x < MATRIX_WIDTH; x++) {
+      for(int y = 0; y < MATRIX_HEIGHT; y++) {
+          if(mapMatrix[x][y].type == FRUIT_TILE) {
+              SDL_Rect dest_rect = { // Resumindo é a posição literal na tela (considerando a resolução)
+                  x * cell_size,
+                  (MATRIX_HEIGHT - 1 - y) * cell_size,
+                  cell_size,
+                  cell_size
+              };
+              SDL_RenderCopy(renderer, fruit_texture, NULL, &dest_rect);
+          }
+      }
+  }
+
+  // Restaura o viewport padrão para a janela toda
+  SDL_RenderSetViewport(renderer, NULL);
   SDL_RenderPresent(renderer);
 }
