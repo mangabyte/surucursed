@@ -64,20 +64,20 @@ int snake_tailX;
 int snake_tailY;
 
 // Tamanho da cobra em células
-int snake_size;
+unsigned int snake_size;
 // Aqui vao algumas alteracoes:
 
 Uint32 next_move_time; // Tempo para a próxima movimentação da cobra
 Uint32 move_delay = 300; // Tempo entre movimentos (velocidade da cobra em ms)
 
 // Variáveis para controle das frutas
-int fruit_count = 0;         // Quantidade atual de frutas no mapa
-int max_fruits = 3;          // Máximo de frutas simultâneas no mapa
+unsigned int fruit_count = 0;         // Quantidade atual de frutas no mapa
+unsigned int max_fruits = 3;          // Máximo de frutas simultâneas no mapa
 Uint32 next_fruit_time;      // Tempo para a próxima geração de fruta
 Uint32 fruit_spawn_delay = 5000; // Tempo entre frutas em ms
 
 // Estrutura para pontuação
-int score = 0;
+unsigned int score = 0;
 // --Funções para renderização --
 // Definição de funçoes que retornam a posição
 // do centro da celula na tela em função da
@@ -100,8 +100,8 @@ SDL_Rect rectFromCellPos(int cell_posX, int cell_posY){
 void spawn_fruit(){
   if (fruit_count >= max_fruits) return;
 
-  int attempts = 0;
-  int max_attempts = 100; // Evita loop infinito
+  unsigned int attempts = 0;
+  unsigned int max_attempts = 100; // Evita loop infinito
   while (attempts < max_attempts) {
     int x = rand() % MATRIX_WIDTH;
     int y = rand() % MATRIX_HEIGHT;
