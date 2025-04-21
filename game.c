@@ -14,10 +14,10 @@
 #define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
 
 // MACROS com as coordenadas iniciais da cabeça e da cauda da cobra
-#define SNAKE_TAILX 5
-#define SNAKE_TAILY 4
-#define SNAKE_HEADX 2
-#define SNAKE_HEADY 2
+#define SNAKE_TAILX 2
+#define SNAKE_TAILY 2
+#define SNAKE_HEADX 5
+#define SNAKE_HEADY 3
 
 // Variaveis para gerir o tempo de jogo para movimentação da cobrinha
 Uint32 last_update_time = 0;
