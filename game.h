@@ -15,5 +15,8 @@ void cleanup_textures(void);
 // Declarações das texturas
 extern SDL_Texture* snake_head_texture;
 extern SDL_Texture* snake_body_texture;
+extern SDL_Texture* snake_curve_o_texture;
+extern SDL_Texture* snake_curve_i_texture;
+extern SDL_Texture* snake_tail_texture;
 extern SDL_Texture* fruit_texture;
 extern SDL_Texture* bg_texture;

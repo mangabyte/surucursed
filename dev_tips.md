@@ -186,7 +186,8 @@ Use o comando
 
 ```bash
 yay -S sdl2
-yay -S sdl2.image    (provavelmente...)
+
+yay -S sdl2_image
 ```
 
 ### Gerando o executável

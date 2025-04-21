@@ -36,8 +36,12 @@ static int cell_size = 0;  // Tamanho real das células (quadradas)
 //Definindo variáveis para os sprites
 SDL_Texture* snake_head_texture = NULL;
 SDL_Texture* snake_body_texture = NULL;
-SDL_Texture* fruit_texture = NULL;
-SDL_Texture* bg_texture = NULL;
+SDL_Texture* snake_tail_texture = NULL;
+SDL_Texture* snake_curve_o_texture = NULL; // Tipo de curva para fora (O-utside), como: | Tipo de curva para dentro (I-nside)
+SDL_Texture* snake_curve_i_texture = NULL; //               ⌟ ⌞                                        ⌜ ⌝
+SDL_Texture* fruit_texture = NULL;         //               ⌝ ⌜                                        ⌞ ⌟
+SDL_Texture* bg_texture = NULL;            //  Pelo menos quando for implementada as animações, por enquanto é só um flip, mas
+                                           //  com os arquivos já implementados para modificação mínima futura
 
 // Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
 extern int game_is_running;
@@ -76,13 +80,6 @@ typedef union mapTile
 // inferior esquerdo
 mapTile mapMatrix[MATRIX_WIDTH][MATRIX_HEIGHT];
 
-// Definição de funçoes que retornam a posição
-// do centro da celula na tela em função da
-// posição dele na matrix.
-// São usadas na renderização de cada celula
-int MatrixToWindowX(int _matrixX) {return _matrixX*cell_size;}
-int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * cell_size);}
-
 // Definição da variavel que delega o delay do movimento da cobra
 unsigned int last_movement_time = 0;
 
@@ -97,10 +94,50 @@ int snake_tailY;
 // Tamanho da cobra em células
 int snake_size;
 
+// Enum de verificação do tipo de célula da cobra
+typedef enum {
+  SEGMENT_STRAIGHT,
+  SEGMENT_CURVE,
+  SEGMENT_TAIL,
+  SEGMENT_HEAD
+} SegmentType;
+
+// Função para determinar tipo da célula
+SegmentType determine_segment_type(int x, int y, int is_head, int is_tail, int prev_dir) {
+  if (is_head) return SEGMENT_HEAD;
+  if (is_tail) return SEGMENT_TAIL;
+
+  direction current_dir = mapMatrix[x][y].snake.forwardDirection;
+
+  // Verifica se há mudança de direção em relação ao segmento anterior
+  if (prev_dir != -1 && current_dir != prev_dir) {
+      return SEGMENT_CURVE;
+  }
+
+  return SEGMENT_STRAIGHT;
+}
+
+// Função que calcula o angulo de um segmento curvo
+int calculate_curve_angle(direction prev_dir, direction current_dir) {
+  // Mapeia combinações de direções para ângulos específicos
+  if ((prev_dir == RIGHT && current_dir == UP) || (prev_dir == DOWN && current_dir == LEFT)) {
+      return 1;    // Curva de direita para cima ou baixo para esquerda
+  }
+  if ((prev_dir == LEFT && current_dir == UP) || (prev_dir == DOWN && current_dir == RIGHT)) {
+      return 2;   // Curva de esquerda para cima ou baixo para direita
+  }
+  if ((prev_dir == RIGHT && current_dir == DOWN) || (prev_dir == UP && current_dir == LEFT)) {
+      return 3;  // Curva de direita para baixo ou cima para esquerda
+  }
+  if ((prev_dir == LEFT && current_dir == DOWN) || (prev_dir == UP && current_dir == RIGHT)) {
+      return 4;  // Curva de esquerda para baixo ou cima para direita
+  }
+  return 0; // Padrão (não deveria acontecer)
+}
 // --Funções para renderização --
 
-// Função para calcular a área vizualizada contida na janela
-void calculate_viewport() {
+// Função para calcular e inicializar a área vizualizada contida na janela
+void initialize_viewport() {
   // Calcula o tamanho máximo possível mantendo a proporção
   int max_cell_width = WINDOW_WIDTH / MATRIX_WIDTH;
   int max_cell_height = WINDOW_HEIGHT / MATRIX_HEIGHT;
@@ -108,12 +145,15 @@ void calculate_viewport() {
   // Usa o menor valor para manter células quadradas
   cell_size = (max_cell_width < max_cell_height) ? max_cell_width : max_cell_height;
 
-  // Calcula a área centralizada
+  // Calcula a área útil do jogo
   int game_width = MATRIX_WIDTH * cell_size;
   int game_height = MATRIX_HEIGHT * cell_size;
 
+  // Colocando no struct as coordenadas de onde será feita a área útil
   game_viewport.x = (WINDOW_WIDTH - game_width) / 2;
   game_viewport.y = (WINDOW_HEIGHT - game_height) / 2;
+
+  // Colocando o tamanho da tela útil no struct
   game_viewport.w = game_width;
   game_viewport.h = game_height;
 }
@@ -137,6 +177,33 @@ void load_textures(SDL_Renderer* renderer) {
   snake_body_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
+  // Carrega a textura da cauda da cobra
+  surface = IMG_Load("assets/snake_tail.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar snake_tail.png: %s\n", IMG_GetError());
+      return;
+  }
+  snake_tail_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Carrega a textura da curva para fora
+  surface = IMG_Load("assets/snake_curve_o.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar snake_curve_o.png: %s\n", IMG_GetError());
+      return;
+  }
+  snake_curve_o_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Carrega a textura da curva para dentro
+  surface = IMG_Load("assets/snake_curve_i.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar snake_curve_i.png: %s\n", IMG_GetError());
+      return;
+  }
+  snake_curve_i_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
   // Carrega a textura da fruta
   surface = IMG_Load("assets/fruit.png");
   if (!surface) {
@@ -158,6 +225,9 @@ void load_textures(SDL_Renderer* renderer) {
 void cleanup_textures() {
   if (snake_head_texture) SDL_DestroyTexture(snake_head_texture);
   if (snake_body_texture) SDL_DestroyTexture(snake_body_texture);
+  if (snake_curve_o_texture) SDL_DestroyTexture(snake_curve_o_texture);
+  if (snake_curve_i_texture) SDL_DestroyTexture(snake_curve_i_texture);
+  if (snake_tail_texture) SDL_DestroyTexture(snake_tail_texture);
   if (fruit_texture) SDL_DestroyTexture(fruit_texture);
   if (bg_texture) SDL_DestroyTexture(bg_texture);
   IMG_Quit();
@@ -177,7 +247,8 @@ SDL_Rect rectFromCellPos(int cell_posX, int cell_posY) {
 
 void setup()
 {
-  calculate_viewport();
+  srand(SDL_GetTicks()); // iniciando número aleatório para geração de fruta
+  initialize_viewport();
   // Inicializa SDL_image
   int imgFlags = IMG_INIT_PNG;
   if (!(IMG_Init(imgFlags) & imgFlags)) {
@@ -211,10 +282,16 @@ void setup()
 
   snake_size = 2;
 
-  // Colocando uma fruta no mapa para testagem
-  mapMatrix[28][10].type = FRUIT_TILE;
-  mapMatrix[26][8].type = FRUIT_TILE;
-  mapMatrix[24][6].type = FRUIT_TILE;
+  // Criando as primeiras frutas em posições aleatórias
+  for (int i = 0; i < 1; i++) { // i < x = quantas frutas existirão no mapa
+    int fruitX, fruitY;
+    do {
+        fruitX = rand() % MATRIX_WIDTH;
+        fruitY = rand() % MATRIX_HEIGHT;
+    } while (mapMatrix[fruitX][fruitY].type != EMPTY_TILE);
+
+    mapMatrix[fruitX][fruitY].type = FRUIT_TILE;
+}
 
 }
 
@@ -296,8 +373,21 @@ void update()
 
     // Caso a nova posição da cabeça seja uma fruta
     if (mapMatrix[new_headX][new_headY].type == FRUIT_TILE) {
-        // Implementar código para comer fruta
-    } else {
+      // Aumenta o tamanho da cobra
+      snake_size++;
+
+      // Remove a fruta comida
+      mapMatrix[new_headX][new_headY].type = EMPTY_TILE;
+
+      // Gera uma nova fruta em posição aleatória
+      int fruitX, fruitY;
+      do {
+          fruitX = rand() % MATRIX_WIDTH;
+          fruitY = rand() % MATRIX_HEIGHT;
+      } while (mapMatrix[fruitX][fruitY].type != EMPTY_TILE);
+
+      mapMatrix[fruitX][fruitY].type = FRUIT_TILE;
+  } else {
         // Move a cobra deslocando o corpo
 
         // Encontra a próxima posição da cauda
@@ -352,12 +442,7 @@ void render(SDL_Renderer* renderer) {
   // Renderiza o background
   for(int x = 0; x < MATRIX_WIDTH; x++) {
     for(int y = 0; y < MATRIX_HEIGHT; y++) {
-        SDL_Rect dest_rect = { // Resumindo é a posição literal na tela (considerando a resolução)
-          x * cell_size,
-            (MATRIX_HEIGHT - 1 - y) * cell_size,
-            cell_size,
-            cell_size
-        };
+        SDL_Rect dest_rect = rectFromCellPos(x, y);
         SDL_RenderCopy(renderer, bg_texture, NULL, &dest_rect);
     }
 }
@@ -365,48 +450,100 @@ void render(SDL_Renderer* renderer) {
   // ====== Layer 1 ======
 
   // Renderiza a cobra
-  int cell_posX = snake_tailX;
-  int cell_posY = snake_tailY;
-  for(int i = 0; i < snake_size; i++) {
-      if(mapMatrix[cell_posX][cell_posY].type != SNAKE_TILE) {
-          fprintf(stderr, "Erro: Segmento de cobra faltando em [%d][%d]\n", cell_posX, cell_posY);
-          game_is_running = FALSE;
-          break;
-      }
+int cell_posX = snake_tailX;
+int cell_posY = snake_tailY;
+int prev_direction = -1; // Direção do segmento anterior
 
-      SDL_Rect dest_rect = { // Resumindo é a posição literal na tela (considerando a resolução)
-          cell_posX * cell_size,
-          (MATRIX_HEIGHT - 1 - cell_posY) * cell_size,
-          cell_size,
-          cell_size
-      };
+for(int i = 0; i < snake_size; i++) {
+    if(mapMatrix[cell_posX][cell_posY].type != SNAKE_TILE) {
+        fprintf(stderr, "Erro: Segmento de cobra faltando em [%d][%d]\n", cell_posX, cell_posY);
+        game_is_running = FALSE;
+        break;
+    }
 
-      // Renderiza cabeça ou corpo
-      if (i == snake_size-1) { // Cabeça
-          SDL_RenderCopy(renderer, snake_head_texture, NULL, &dest_rect);
-      } else { // Corpo
-          SDL_RenderCopy(renderer, snake_body_texture, NULL, &dest_rect);
-      }
+    SDL_Rect dest_rect = rectFromCellPos(cell_posX, cell_posY);
 
-      // Move para o próximo segmento
-      switch (mapMatrix[cell_posX][cell_posY].snake.forwardDirection) {
-          case UP: cell_posY++; break;
-          case DOWN: cell_posY--; break;
-          case LEFT: cell_posX--; break;
-          case RIGHT: cell_posX++; break;
+    // Determina o tipo de segmento
+    SegmentType seg_type = determine_segment_type(
+        cell_posX, cell_posY,
+        (i == snake_size-1), // Verifica se o segmento é uma cabeça
+        (i == 0),            // Verifica se o segmento é uma cauda
+        prev_direction       // Direção do segmento anterior
+    );
+      // Renderiza o segmento apropriado
+      switch(seg_type) {
+        case SEGMENT_HEAD: {
+            double angle = 0;
+            switch(mapMatrix[cell_posX][cell_posY].snake.forwardDirection) {
+                case UP: angle = 0; break;
+                case RIGHT: angle = 90; break;
+                case DOWN: angle = 180; break;
+                case LEFT: angle = 270; break;
+            }
+            SDL_RenderCopyEx(renderer, snake_head_texture, NULL, &dest_rect, angle, NULL, SDL_FLIP_NONE);
+            break;
+        }
+        case SEGMENT_TAIL: {
+            // Encontre a direção da cauda (oposto da direção do segmento anterior)
+            direction tail_dir = mapMatrix[cell_posX][cell_posY].snake.forwardDirection;
+            double angle = 0;
+            switch(tail_dir) {
+              case UP: angle = 0; break;
+              case RIGHT: angle = 90; break;
+              case DOWN: angle = 180; break;
+              case LEFT: angle = 270; break;
+            }
+            SDL_RenderCopyEx(renderer, snake_tail_texture, NULL, &dest_rect, angle, NULL, SDL_FLIP_NONE);
+            break;
+        }
+        case SEGMENT_CURVE: {
+            switch(calculate_curve_angle(prev_direction, mapMatrix[cell_posX][cell_posY].snake.forwardDirection)){
+              case 1: // Direita - Cima
+              SDL_RenderCopyEx(renderer, snake_curve_i_texture, NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
+              break;
+              case 2: // Esquerda - Cima
+              SDL_RenderCopyEx(renderer, snake_curve_o_texture, NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
+              break;
+              case 3: // Direita - Baixo
+              SDL_RenderCopyEx(renderer, snake_curve_o_texture, NULL, &dest_rect, 180, NULL, SDL_FLIP_NONE);
+              break;
+              case 4: // Esquerda - Baixo
+              SDL_RenderCopyEx(renderer, snake_curve_i_texture, NULL, &dest_rect, 180, NULL, SDL_FLIP_NONE);
+              break;
+            }
+      break;
       }
+        case SEGMENT_STRAIGHT: {
+            double angle = 0;
+            switch(mapMatrix[cell_posX][cell_posY].snake.forwardDirection) {
+                case UP: angle = 0; break;
+                case RIGHT: angle = 90; break;
+                case DOWN: angle = 180; break;
+                case LEFT: angle = 270; break;
+            }
+            SDL_RenderCopyEx(renderer, snake_body_texture, NULL, &dest_rect, angle, NULL, SDL_FLIP_NONE);
+            break;
+        }
+
+    }
+
+    // Atualiza a direção anterior para o próximo segmento
+    prev_direction = mapMatrix[cell_posX][cell_posY].snake.forwardDirection;
+
+    // Move para o próximo segmento
+    switch (mapMatrix[cell_posX][cell_posY].snake.forwardDirection) {
+    case UP: cell_posY++; break;
+    case DOWN: cell_posY--; break;
+    case LEFT: cell_posX--; break;
+    case RIGHT: cell_posX++; break;
+  }
   }
 
   // Renderiza as frutas
   for(int x = 0; x < MATRIX_WIDTH; x++) {
       for(int y = 0; y < MATRIX_HEIGHT; y++) {
           if(mapMatrix[x][y].type == FRUIT_TILE) {
-              SDL_Rect dest_rect = { // Resumindo é a posição literal na tela (considerando a resolução)
-                  x * cell_size,
-                  (MATRIX_HEIGHT - 1 - y) * cell_size,
-                  cell_size,
-                  cell_size
-              };
+              SDL_Rect dest_rect = rectFromCellPos(x, y);
               SDL_RenderCopy(renderer, fruit_texture, NULL, &dest_rect);
           }
       }
