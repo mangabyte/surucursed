@@ -185,9 +185,8 @@ Tenha a extensão **[EditorConfig for VS Code (EditorConfig)](https://marketplac
 Use o comando
 
 ```bash
-yay -S sdl2
+yay -S sdl2 sdl2_image
 
-yay -S sdl2_image
 ```
 
 ### Gerando o executável
