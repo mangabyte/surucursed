@@ -13,11 +13,23 @@
 #define CELL_WIDTH WINDOW_WIDTH/MATRIX_WIDTH
 #define CELL_HEIGHT WINDOW_HEIGHT/MATRIX_HEIGHT
 
-//
+// MACROS com as coordenadas iniciais da cabeça e da cauda da cobra
+#define SNAKE_TAILX 2
+#define SNAKE_TAILY 2
+#define SNAKE_HEADX 5
+#define SNAKE_HEADY 3
+
+// Variaveis para gerir o tempo de jogo para movimentação da cobrinha
 Uint32 last_update_time = 0;
 const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
 
-// Definido na main, quando 0 o jogo para após executar a renderização
+// MACROS com os parametros de cores (RGB alpha)
+#define RED 255,0,0,255
+#define GREEN 0,255,0,255
+#define MANGENTA 255,0,255,255
+#define BLACK 0,0,0,255
+
+// Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
 extern int game_is_running;
 
 // Definindo o enum indica o que
@@ -54,13 +66,6 @@ typedef union mapTile
 // inferior esquerdo
 mapTile mapMatrix[MATRIX_WIDTH][MATRIX_HEIGHT];
 
-// Definição de funçoes que retornam a posição
-// do centro da celula na tela em função da
-// posição dele na matrix.
-// São usadas na renderização de cada celula
-int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
-int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
-
 // Definição da variavel que delega o delay do movimento da cobra
 unsigned int last_movement_time = 0;
 
@@ -72,15 +77,35 @@ int snake_headY;
 int snake_tailX;
 int snake_tailY;
 
-#define SNAKE_TAILX 5
-#define SNAKE_TAILY 4
-#define SNAKE_HEADX 5
-#define SNAKE_HEADY 3
+// Tamanho da cobra em células
+int snake_size;
 
+// --Funções para renderização --
+
+// Definição de funçoes que retornam a posição
+// do centro da celula na tela em função da
+// posição dele na matrix.
+int MatrixToWindowX(int _matrixX) {return _matrixX*CELL_WIDTH + CELL_WIDTH/2;}
+int MatrixToWindowY(int _matrixY) {return WINDOW_HEIGHT - (_matrixY * CELL_HEIGHT + CELL_HEIGHT/2);}
+
+// Definição de uma função que dá as específicações
+// de desenho de um retângulo
+SDL_Rect rectFromCellPos(int cell_posX, int cell_posY)
+{
+  return (SDL_Rect){
+    MatrixToWindowX(cell_posX) - CELL_WIDTH/2,
+    MatrixToWindowY(cell_posY) - CELL_HEIGHT/2,
+    CELL_WIDTH,
+    CELL_HEIGHT
+  };
+}
+
+// --Game Loop--
 
 void setup()
 {
 
+  //Definir
   last_update_time = SDL_GetTicks();
 
   // Iniciando toda a matriz como vazia
@@ -101,11 +126,21 @@ void setup()
   snake_tailY = SNAKE_TAILY;
 
   // Iniciando as posições iniciais da cobra
-  mapMatrix[snake_tailX][snake_tailY].snake = (snakeTile){SNAKE_TILE,DOWN};
+  mapMatrix[snake_tailX][snake_tailY].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[snake_tailX][snake_tailY+1].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[snake_tailX][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[snake_tailX+1][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[snake_tailX+2][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[snake_tailX+3][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,DOWN};
   mapMatrix[snake_headX][snake_headY].snake = (snakeTile){SNAKE_TILE,DOWN};
 
-  // Colocando uma fruta no mapa para testagem
+  snake_size = 7;
+
+  // Colocando frutas no mapa para testagem
   mapMatrix[28][10].type = FRUIT_TILE;
+  mapMatrix[26][8].type = FRUIT_TILE;
+  mapMatrix[24][6].type = FRUIT_TILE;
+
 }
 
   void process_input() {
@@ -114,36 +149,36 @@ void setup()
 
     switch (event.type)
     {
-        case SDL_QUIT:
-            game_is_running = FALSE;
-            break;
-        case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
+      case SDL_QUIT:
+        game_is_running = FALSE;
+        break;
+      case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
 
-            //Captura as teclas UP/w , DOWN/s , LEFT/a , RIGHT/d e muda a direção da cabeça da cobra
-            if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
-                // Se a posição da cobra for contrária a da tecla, não move
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != DOWN) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = UP;
-                }
-            }
-            if (event.key.keysym.sym == SDLK_a || event.key.keysym.sym == SDLK_LEFT) {
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != RIGHT) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = LEFT;
-                }
-            }
-            if (event.key.keysym.sym == SDLK_s || event.key.keysym.sym == SDLK_DOWN) {
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != UP) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = DOWN;
-                }
-            }
-            if (event.key.keysym.sym == SDLK_d || event.key.keysym.sym == SDLK_RIGHT) {
-                if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != LEFT) {
-                    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = RIGHT;
-                }
-            }
-            break;
-    }
+          //Captura as teclas UP/w , DOWN/s , LEFT/a , RIGHT/d e muda a direção da cabeça da cobra
+          if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
+              // Se a posição da cobra for contrária a da tecla, não move
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != DOWN) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = UP;
+              }
+          }
+          if (event.key.keysym.sym == SDLK_a || event.key.keysym.sym == SDLK_LEFT) {
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != RIGHT) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = LEFT;
+              }
+          }
+          if (event.key.keysym.sym == SDLK_s || event.key.keysym.sym == SDLK_DOWN) {
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != UP) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = DOWN;
+              }
+          }
+          if (event.key.keysym.sym == SDLK_d || event.key.keysym.sym == SDLK_RIGHT) {
+              if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != LEFT) {
+                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = RIGHT;
+              }
+          }
+          break;
+  }
 }
 
 void update()
@@ -181,9 +216,14 @@ void update()
         return;
     }
 
+    // Caso a nova posição da cabeça seja o corpo da cobra
+    if (mapMatrix[new_headX][new_headY].type == SNAKE_TILE) {
+      // Implementar código para colidir com o corpo
+  }
+
     // Caso a nova posição da cabeça seja uma fruta
     if (mapMatrix[new_headX][new_headY].type == FRUIT_TILE) {
-        // Implementar código para comer fruta
+        snake_size+=1;
     } else {
         // Move a cobra deslocando o corpo
 
@@ -220,102 +260,105 @@ void update()
     snake_headY = new_headY;
 }
 
+
 void render(SDL_Renderer* renderer)
 {
-  // Percorre toda matriz
-  for(int i = 0; i < MATRIX_WIDTH; i++)
+  SDL_SetRenderDrawColor(renderer, BLACK);
+  SDL_RenderClear(renderer);
+
+  SDL_Rect rect;
+
+  int cell_posX;
+  int cell_posY;
+
+  cell_posX = snake_tailX;
+  cell_posY = snake_tailY;
+
+  for(int i = 0; i < snake_size; i++)
   {
-    for(int j = 0; j < MATRIX_HEIGHT; j++)
+    if(mapMatrix[cell_posX][cell_posY].type != SNAKE_TILE)
     {
-      // Pega a posição na tela da célula atual
-      int window_x = MatrixToWindowX(i);
-      int window_y = MatrixToWindowY(j);
+      rect = rectFromCellPos(cell_posX, cell_posY);
 
+      fprintf(stderr,"A cobra termina antes do tamanho informado em [%d][%d].\n",cell_posX,cell_posY);
+
+      game_is_running = FALSE;
+      break;
+    }
+    rect = rectFromCellPos(cell_posX, cell_posY);
+
+    // Coloca a cor a ser desenhada (Verde)
+    SDL_SetRenderDrawColor(renderer, GREEN);
+
+    // Desenha um quadrado na célula
+    SDL_RenderFillRect(renderer, &rect);
+
+    // Coloca a cor a ser desenhada (Vermelha)
+    SDL_SetRenderDrawColor(renderer, RED);
+
+    // Salva as direções da cobra
+    // Move o ponteiro para a proxima casa
+    char dirX = 0;
+    char dirY = 0;
+
+    // Atualiza a direção a ser renderizada da cobra e
+    // registra o movimento efetuado
+    switch (mapMatrix[cell_posX][cell_posY].snake.forwardDirection)
+    {
+      case UP:
+        cell_posY++;
+        dirY = 1;
+        break;
+      case DOWN:
+        cell_posY--;
+        dirY = -1;
+        break;
+      case LEFT:
+        cell_posX--;
+        dirX = -1;
+        break;
+      case RIGHT:
+        cell_posX++;
+        dirX = 1;
+        break;
+    }
+
+    // Desenha as linhas que indicam a forwardDirection da atual parte da cobra
+    SDL_RenderDrawLine(renderer,
+      MatrixToWindowX(cell_posX - dirX),
+      MatrixToWindowY(cell_posY - dirY),
+      MatrixToWindowX(cell_posX - dirX) + dirX*( CELL_WIDTH/2),
+      MatrixToWindowY(cell_posY - dirY) + dirY*(-CELL_HEIGHT/2)
+    );
+  }
+
+  // Percorre toda matriz
+  for(int cell_posX = 0; cell_posX < MATRIX_WIDTH; cell_posX++)
+  {
+    for(int cell_posY = 0; cell_posY < MATRIX_HEIGHT; cell_posY++)
+    {
       // Define um quadrado na posição da célula
-      SDL_Rect rect =
-      {
-        window_x - CELL_WIDTH/2,
-        window_y - CELL_HEIGHT/2,
-        CELL_WIDTH,
-        CELL_HEIGHT
-      };
+      rect = rectFromCellPos(cell_posX, cell_posY);
 
-      switch (mapMatrix[i][j].type)
+      switch (mapMatrix[cell_posX][cell_posY].type)
       {
         case EMPTY_TILE:
-          // Coloca a cor a ser desenhada (Preta)
-          SDL_SetRenderDrawColor(renderer,
-            0,
-            0,
-            0,
-            255);
-
-          // Desenha um quadrado na célula
-          SDL_RenderFillRect(renderer, &rect);
           break;
-
 
         case SNAKE_TILE:
-          // Coloca a cor a ser desenhada (Verde)
-          SDL_SetRenderDrawColor(renderer,
-            0,
-            255,
-            0,
-            255);
-
-          // Desenha um quadrado na célula
-          SDL_RenderFillRect(renderer, &rect);
-
-          // Coloca a cor a ser desenhada (Vermelha)
-          SDL_SetRenderDrawColor(renderer,
-            255,
-            0,
-            0,
-            255);
-
-          // Desenha uma linha indicando a direção do pedaço da cobra
-          switch (mapMatrix[i][j].snake.forwardDirection)
-          {
-            case UP:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x, window_y - CELL_HEIGHT/2);
-              break;
-            case DOWN:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x, window_y + CELL_HEIGHT/2);
-              break;
-            case LEFT:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x - CELL_WIDTH/2, window_y);
-              break;
-            case RIGHT:
-              SDL_RenderDrawLine(renderer, window_x, window_y,
-                window_x + CELL_WIDTH/2, window_y);
-              break;
-          }
           break;
-
 
         case FRUIT_TILE:
           // Coloca a cor a ser desenhada (Vermelha)
-          SDL_SetRenderDrawColor(renderer,
-            255,
-            0,
-            0,
-            255);
+          SDL_SetRenderDrawColor(renderer, RED);
 
           // Desenha um quadrado na célula
           SDL_RenderFillRect(renderer, &rect);
           break;
 
-
         default:
           // Coloca a cor a ser desenhada (Mangenta)
-          SDL_SetRenderDrawColor(renderer,
-            255,
-            0,
-            255,
-            255);
+          SDL_SetRenderDrawColor(renderer, MANGENTA);
 
           // Desenha um quadrado na célula
           SDL_RenderFillRect(renderer, &rect);
