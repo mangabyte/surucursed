@@ -223,7 +223,7 @@ void update()
 
     // Caso a nova posição da cabeça seja uma fruta
     if (mapMatrix[new_headX][new_headY].type == FRUIT_TILE) {
-        // Implementar código para comer fruta
+        snake_size+=1;
     } else {
         // Move a cobra deslocando o corpo
 
