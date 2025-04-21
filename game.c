@@ -126,13 +126,13 @@ void setup()
   snake_tailY = SNAKE_TAILY;
 
   // Iniciando as posições iniciais da cobra
-  mapMatrix[2][2].snake = (snakeTile){SNAKE_TILE,UP};
-  mapMatrix[2][3].snake = (snakeTile){SNAKE_TILE,UP};
-  mapMatrix[2][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
-  mapMatrix[3][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
-  mapMatrix[4][4].snake = (snakeTile){SNAKE_TILE,RIGHT};
-  mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
-  mapMatrix[5][3].snake = (snakeTile){SNAKE_TILE,DOWN};
+  mapMatrix[snake_tailX][snake_tailY].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[snake_tailX][snake_tailY+1].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[snake_tailX][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[snake_tailX+1][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[snake_tailX+2][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,RIGHT};
+  mapMatrix[snake_tailX+3][snake_tailY+2].snake = (snakeTile){SNAKE_TILE,DOWN};
+  mapMatrix[snake_headX][snake_headY].snake = (snakeTile){SNAKE_TILE,DOWN};
 
   snake_size = 7;
 
