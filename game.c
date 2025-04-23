@@ -40,7 +40,7 @@ SDL_Texture* snake_tail_texture = NULL;
 SDL_Texture* snake_curve_o_texture = NULL; // Tipo de curva para fora (O-utside), como: | Tipo de curva para dentro (I-nside)
 SDL_Texture* snake_curve_i_texture = NULL; //               ⌟ ⌞                                        ⌜ ⌝
 SDL_Texture* fruit_texture = NULL;         //               ⌝ ⌜                                        ⌞ ⌟
-SDL_Texture* bg_texture = NULL;            //  Pelo menos quando for implementada as animações, por enquanto é só um flip, mas
+SDL_Texture* background_texture = NULL;            //  Pelo menos quando for implementada as animações, por enquanto é só um flip, mas
                                            //  com os arquivos já implementados para modificação mínima futura
 
 // Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
@@ -90,6 +90,9 @@ int snake_headY;
 // Definição da posição da cauda da cobra na matrix
 int snake_tailX;
 int snake_tailY;
+
+// Head direction
+direction head_dir = UP;
 
 // Tamanho da cobra em células
 int snake_size;
@@ -214,12 +217,12 @@ void load_textures(SDL_Renderer* renderer) {
   SDL_FreeSurface(surface);
 
   // Carrega a textura do Background
-  surface = IMG_Load("assets/bg.png");
+  surface = IMG_Load("assets/background.png");
   if (!surface) {
-      fprintf(stderr, "Erro ao carregar bg.png: %s\n", IMG_GetError());
+      fprintf(stderr, "Erro ao carregar background.png: %s\n", IMG_GetError());
       return;
   }
-  bg_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  background_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 }
 void cleanup_textures() {
@@ -229,7 +232,7 @@ void cleanup_textures() {
   if (snake_curve_i_texture) SDL_DestroyTexture(snake_curve_i_texture);
   if (snake_tail_texture) SDL_DestroyTexture(snake_tail_texture);
   if (fruit_texture) SDL_DestroyTexture(fruit_texture);
-  if (bg_texture) SDL_DestroyTexture(bg_texture);
+  if (background_texture) SDL_DestroyTexture(background_texture);
   IMG_Quit();
 }
 // Definição de uma função que dá as específicações
@@ -313,22 +316,22 @@ void setup()
           if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
               // Se a posição da cobra for contrária a da tecla, não move
               if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != DOWN) {
-                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = UP;
+                  head_dir = UP;
               }
           }
           if (event.key.keysym.sym == SDLK_a || event.key.keysym.sym == SDLK_LEFT) {
               if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != RIGHT) {
-                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = LEFT;
+                head_dir = LEFT;
               }
           }
           if (event.key.keysym.sym == SDLK_s || event.key.keysym.sym == SDLK_DOWN) {
               if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != UP) {
-                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = DOWN;
+                head_dir = DOWN;
               }
           }
           if (event.key.keysym.sym == SDLK_d || event.key.keysym.sym == SDLK_RIGHT) {
               if (mapMatrix[snake_headX][snake_headY].snake.forwardDirection != LEFT) {
-                  mapMatrix[snake_headX][snake_headY].snake.forwardDirection = RIGHT;
+                head_dir = RIGHT;
               }
           }
           break;
@@ -347,7 +350,7 @@ void update()
     int new_headX = snake_headX;
     int new_headY = snake_headY;
 
-    switch (mapMatrix[snake_headX][snake_headY].snake.forwardDirection)
+    switch (head_dir)
     {
         case UP:
             new_headY++;
@@ -420,6 +423,7 @@ void update()
     }
 
     // Atualiza a posição da cabeça
+    mapMatrix[snake_headX][snake_headY].snake.forwardDirection = head_dir;
     mapMatrix[new_headX][new_headY].snake = (snakeTile){SNAKE_TILE, mapMatrix[snake_headX][snake_headY].snake.forwardDirection};
     snake_headX = new_headX;
     snake_headY = new_headY;
@@ -445,7 +449,7 @@ void render(SDL_Renderer* renderer) {
   for(int x = 0; x < MATRIX_WIDTH; x++) {
     for(int y = 0; y < MATRIX_HEIGHT; y++) {
         SDL_Rect dest_rect = rectFromCellPos(x, y);
-        SDL_RenderCopy(renderer, bg_texture, NULL, &dest_rect);
+        SDL_RenderCopy(renderer, background_texture, NULL, &dest_rect);
     }
 }
 
