@@ -4,6 +4,7 @@
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // O tamanho do "Tabuleiro" em quantidade de quadrados que a cobra está
 #define MATRIX_WIDTH 20
@@ -11,7 +12,6 @@
 
 //Tamanho "ideal" que vai servir como base para comparar estimadamente o tamanho de cada quadradinho na tela
 #define IDEAL_CELL_SIZE WINDOW_WIDTH/MATRIX_WIDTH
-
 
 // MACROS com as coordenadas iniciais da cabeça e da cauda da cobra
 #define SNAKE_TAILX 5
@@ -34,14 +34,31 @@ static SDL_Rect game_viewport = {0};
 static int cell_size = 0;  // Tamanho real das células (quadradas)
 
 //Definindo variáveis para os sprites
-SDL_Texture* snake_head_texture = NULL;
-SDL_Texture* snake_body_texture = NULL;
-SDL_Texture* snake_tail_texture = NULL;
-SDL_Texture* snake_curve_o_texture = NULL; // Tipo de curva para fora (O-utside), como: | Tipo de curva para dentro (I-nside)
-SDL_Texture* snake_curve_i_texture = NULL; //               ⌟ ⌞                                        ⌜ ⌝
-SDL_Texture* fruit_texture = NULL;         //               ⌝ ⌜                                        ⌞ ⌟
-SDL_Texture* background_texture = NULL;            //  Pelo menos quando for implementada as animações, por enquanto é só um flip, mas
-                                           //  com os arquivos já implementados para modificação mínima futura
+SDL_Texture* CabecaBaixo_texture = NULL;
+SDL_Texture* CabecaCima_texture = NULL;
+SDL_Texture* CabecaDireita_texture = NULL;
+SDL_Texture* CabecaEsquerda_texture = NULL;
+
+SDL_Texture* CaudaBaixo_texture = NULL;
+SDL_Texture* CaudaCima_texture = NULL;
+SDL_Texture* CaudaDireita_texture = NULL;
+SDL_Texture* CaudaEsquerda_texture = NULL;
+
+SDL_Texture* CurvaBaixoDireita_texture  = NULL;
+SDL_Texture* CurvaBaixoEsquerda_texture  = NULL;
+SDL_Texture* CurvaCimaDireita_texture  = NULL;
+SDL_Texture* CurvaCimaEsquerda_texture  = NULL;
+
+SDL_Texture* retoDireitaEsquerda_texture  = NULL;
+SDL_Texture* retoEsquerdaDireita_texture  = NULL;
+SDL_Texture* retoVertical_texture  = NULL;
+
+SDL_Texture* pitu_texture  = NULL;
+SDL_Texture* manga_texture  = NULL;
+SDL_Texture* caju_texture  = NULL;
+SDL_Texture* limao_texture  = NULL;
+
+SDL_Texture* background_texture = NULL;
 
 // Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
 extern int game_is_running;
@@ -66,12 +83,20 @@ typedef struct snakeTile
   direction forwardDirection;
 } snakeTile;
 
+typedef struct fruitTile
+{
+  mapTileType type;
+  char sprite;
+} fruitTile;
+
+
 // Definindo o union que indica o que
 // uma certa celula do mapa tem
 typedef union mapTile
 {
   mapTileType type;
   snakeTile snake;
+  fruitTile fruit;
 
 } mapTile;
 
@@ -120,23 +145,6 @@ SegmentType determine_segment_type(int x, int y, int is_head, int is_tail, int p
   return SEGMENT_STRAIGHT;
 }
 
-// Função que calcula o angulo de um segmento curvo
-int calculate_curve_angle(direction prev_dir, direction current_dir) {
-  // Mapeia combinações de direções para ângulos específicos
-  if ((prev_dir == RIGHT && current_dir == UP) || (prev_dir == DOWN && current_dir == LEFT)) {
-      return 1;    // Curva de direita para cima ou baixo para esquerda
-  }
-  if ((prev_dir == LEFT && current_dir == UP) || (prev_dir == DOWN && current_dir == RIGHT)) {
-      return 2;   // Curva de esquerda para cima ou baixo para direita
-  }
-  if ((prev_dir == RIGHT && current_dir == DOWN) || (prev_dir == UP && current_dir == LEFT)) {
-      return 3;  // Curva de direita para baixo ou cima para esquerda
-  }
-  if ((prev_dir == LEFT && current_dir == DOWN) || (prev_dir == UP && current_dir == RIGHT)) {
-      return 4;  // Curva de esquerda para baixo ou cima para direita
-  }
-  return 0; // Padrão (não deveria acontecer)
-}
 // --Funções para renderização --
 
 // Função para calcular e inicializar a área vizualizada contida na janela
@@ -163,57 +171,160 @@ void initialize_viewport() {
 // Função para carregar os sprites
 void load_textures(SDL_Renderer* renderer) {
   // Carrega a textura da cabeça da cobra
-  SDL_Surface* surface = IMG_Load("assets/snake_head.png");
+  SDL_Surface* surface = IMG_Load("assets/CabecaBaixo.png");
   if (!surface) {
-      fprintf(stderr, "Erro ao carregar snake_head.png: %s\n", IMG_GetError());
+      fprintf(stderr, "Erro ao carregar CabecaBaixo.png: %s\n", IMG_GetError());
       return;
   }
-  snake_head_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  CabecaBaixo_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
-  // Carrega a textura do corpo da cobra
-  surface = IMG_Load("assets/snake_body.png");
+  surface = IMG_Load("assets/CabecaCima.png");
   if (!surface) {
-      fprintf(stderr, "Erro ao carregar snake_body.png: %s\n", IMG_GetError());
+      fprintf(stderr, "Erro ao carregar CabecaCima.png: %s\n", IMG_GetError());
       return;
   }
-  snake_body_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  CabecaCima_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
-  // Carrega a textura da cauda da cobra
-  surface = IMG_Load("assets/snake_tail.png");
+  surface = IMG_Load("assets/CabecaDireita.png");
   if (!surface) {
-      fprintf(stderr, "Erro ao carregar snake_tail.png: %s\n", IMG_GetError());
+      fprintf(stderr, "Erro ao carregar CabecaDireita.png: %s\n", IMG_GetError());
       return;
   }
-  snake_tail_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  CabecaDireita_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
-  // Carrega a textura da curva para fora
-  surface = IMG_Load("assets/snake_curve_o.png");
+  surface = IMG_Load("assets/CabecaEsquerda.png");
   if (!surface) {
-      fprintf(stderr, "Erro ao carregar snake_curve_o.png: %s\n", IMG_GetError());
+      fprintf(stderr, "Erro ao carregar CabecaEsquerda.png: %s\n", IMG_GetError());
       return;
   }
-  snake_curve_o_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  CabecaEsquerda_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
-  // Carrega a textura da curva para dentro
-  surface = IMG_Load("assets/snake_curve_i.png");
+  // Carrega Cauda
+  surface = IMG_Load("assets/CaudaBaixo.png");
   if (!surface) {
-      fprintf(stderr, "Erro ao carregar snake_curve_i.png: %s\n", IMG_GetError());
+      fprintf(stderr, "Erro ao carregar CaudaBaixo.png: %s\n", IMG_GetError());
       return;
   }
-  snake_curve_i_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  CaudaBaixo_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
-  // Carrega a textura da fruta
-  surface = IMG_Load("assets/fruit.png");
+  surface = IMG_Load("assets/CaudaCima.png");
   if (!surface) {
-      fprintf(stderr, "Erro ao carregar fruit.png: %s\n", IMG_GetError());
+      fprintf(stderr, "Erro ao carregar CaudaCima.png: %s\n", IMG_GetError());
       return;
   }
-  fruit_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  CaudaCima_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/CaudaDireita.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar CaudaDireita.png: %s\n", IMG_GetError());
+      return;
+  }
+  CaudaDireita_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/CaudaEsquerda.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar CaudaEsquerda.png: %s\n", IMG_GetError());
+      return;
+  }
+  CaudaEsquerda_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Curvas
+  surface = IMG_Load("assets/CurvaBaixoDireita.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar CurvaBaixoDireita.png: %s\n", IMG_GetError());
+      return;
+  }
+  CurvaBaixoDireita_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/CurvaBaixoEsquerda.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar CurvaBaixoEsquerda.png: %s\n", IMG_GetError());
+      return;
+  }
+  CurvaBaixoEsquerda_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/CurvaCimaDireita.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar CurvaCimaDireita.png: %s\n", IMG_GetError());
+      return;
+  }
+  CurvaCimaDireita_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/CurvaCimaEsquerda.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar CurvaCimaEsquerda.png: %s\n", IMG_GetError());
+      return;
+  }
+  CurvaCimaEsquerda_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  //Reto
+  surface = IMG_Load("assets/RetoDireitaEsquerda.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar RetoDireitaEsquerda.png: %s\n", IMG_GetError());
+      return;
+  }
+  retoDireitaEsquerda_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/RetoEsquerdaDireita.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar RetoEsquerdaDireita.png: %s\n", IMG_GetError());
+      return;
+  }
+  retoEsquerdaDireita_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/RetoVertical.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar RetoVertical.png: %s\n", IMG_GetError());
+      return;
+  }
+  retoVertical_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Frutas
+  surface = IMG_Load("assets/limao.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar limao.png: %s\n", IMG_GetError());
+      return;
+  }
+  limao_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/manga.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar manga.png: %s\n", IMG_GetError());
+      return;
+  }
+  manga_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/pitu.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar pitu.png: %s\n", IMG_GetError());
+      return;
+  }
+  pitu_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  surface = IMG_Load("assets/caju.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar caju.png: %s\n", IMG_GetError());
+      return;
+  }
+  caju_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
   // Carrega a textura do Background
@@ -226,13 +337,27 @@ void load_textures(SDL_Renderer* renderer) {
   SDL_FreeSurface(surface);
 }
 void cleanup_textures() {
-  if (snake_head_texture) SDL_DestroyTexture(snake_head_texture);
-  if (snake_body_texture) SDL_DestroyTexture(snake_body_texture);
-  if (snake_curve_o_texture) SDL_DestroyTexture(snake_curve_o_texture);
-  if (snake_curve_i_texture) SDL_DestroyTexture(snake_curve_i_texture);
-  if (snake_tail_texture) SDL_DestroyTexture(snake_tail_texture);
-  if (fruit_texture) SDL_DestroyTexture(fruit_texture);
-  if (background_texture) SDL_DestroyTexture(background_texture);
+
+  if(CabecaBaixo_texture) SDL_DestroyTexture( CabecaBaixo_texture);
+  if(CabecaCima_texture) SDL_DestroyTexture( CabecaCima_texture);
+  if(CabecaDireita_texture) SDL_DestroyTexture( CabecaDireita_texture);
+  if(CabecaEsquerda_texture) SDL_DestroyTexture( CabecaEsquerda_texture);
+  if(CaudaBaixo_texture) SDL_DestroyTexture( CaudaBaixo_texture);
+  if(CaudaCima_texture) SDL_DestroyTexture( CaudaCima_texture);
+  if(CaudaDireita_texture) SDL_DestroyTexture( CaudaDireita_texture);
+  if(CaudaEsquerda_texture) SDL_DestroyTexture( CaudaEsquerda_texture);
+  if(CurvaBaixoDireita_texture ) SDL_DestroyTexture( CurvaBaixoDireita_texture);
+  if(CurvaBaixoEsquerda_texture ) SDL_DestroyTexture( CurvaBaixoEsquerda_texture);
+  if(CurvaCimaDireita_texture ) SDL_DestroyTexture( CurvaCimaDireita_texture);
+  if(CurvaCimaEsquerda_texture ) SDL_DestroyTexture( CurvaCimaEsquerda_texture);
+  if(retoDireitaEsquerda_texture ) SDL_DestroyTexture( retoDireitaEsquerda_texture);
+  if(retoEsquerdaDireita_texture ) SDL_DestroyTexture( retoEsquerdaDireita_texture);
+  if(retoVertical_texture ) SDL_DestroyTexture( retoVertical_texture);
+  if(pitu_texture ) SDL_DestroyTexture( pitu_texture);
+  if(manga_texture ) SDL_DestroyTexture( manga_texture);
+  if(caju_texture ) SDL_DestroyTexture( caju_texture);
+  if(limao_texture ) SDL_DestroyTexture( limao_texture);
+
   IMG_Quit();
 }
 // Definição de uma função que dá as específicações
@@ -288,19 +413,18 @@ void setup()
   snake_size = 3;
 
   // Criando as primeiras frutas em posições aleatórias
-  for (int i = 0; i < 1; i++) { // i < x = quantas frutas existirão no mapa
+  for (int i = 0; i < 5; i++) { // i < x = quantas frutas existirão no mapa
     int fruitX, fruitY;
     do {
         fruitX = rand() % MATRIX_WIDTH;
         fruitY = rand() % MATRIX_HEIGHT;
     } while (mapMatrix[fruitX][fruitY].type != EMPTY_TILE);
 
-    mapMatrix[fruitX][fruitY].type = FRUIT_TILE;
+    mapMatrix[fruitX][fruitY].fruit = (fruitTile){FRUIT_TILE, rand()%7};
+  }
 }
 
-}
-
-  void process_input() {
+void process_input() {
     SDL_Event event;
     SDL_PollEvent(&event);
 
@@ -391,7 +515,7 @@ void update()
           fruitY = rand() % MATRIX_HEIGHT;
       } while (mapMatrix[fruitX][fruitY].type != EMPTY_TILE);
 
-      mapMatrix[fruitX][fruitY].type = FRUIT_TILE;
+      mapMatrix[fruitX][fruitY].fruit = (fruitTile){FRUIT_TILE, rand()%7};
   } else {
         // Move a cobra deslocando o corpo
 
@@ -476,62 +600,64 @@ for(int i = 0; i < snake_size; i++) {
         (i == 0),            // Verifica se o segmento é uma cauda
         prev_direction       // Direção do segmento anterior
     );
+      SDL_Texture* to_render = NULL;
       // Renderiza o segmento apropriado
       switch(seg_type) {
-        case SEGMENT_HEAD: {
-            double angle = 0;
-            switch(mapMatrix[cell_posX][cell_posY].snake.forwardDirection) {
-                case UP: angle = 0; break;
-                case RIGHT: angle = 90; break;
-                case DOWN: angle = 180; break;
-                case LEFT: angle = 270; break;
-            }
-            SDL_RenderCopyEx(renderer, snake_head_texture, NULL, &dest_rect, angle, NULL, SDL_FLIP_NONE);
-            break;
+        case SEGMENT_HEAD:
+        {
+          switch(mapMatrix[cell_posX][cell_posY].snake.forwardDirection)
+          {
+            case UP: to_render = CabecaBaixo_texture; break;
+            case RIGHT: to_render = CabecaEsquerda_texture; break;
+            case DOWN: to_render = CabecaCima_texture; break;
+            case LEFT: to_render = CabecaDireita_texture; break;
+          }
+          break;
         }
         case SEGMENT_TAIL: {
             // Encontre a direção da cauda (oposto da direção do segmento anterior)
             direction tail_dir = mapMatrix[cell_posX][cell_posY].snake.forwardDirection;
-            double angle = 0;
-            switch(tail_dir) {
-              case UP: angle = 0; break;
-              case RIGHT: angle = 90; break;
-              case DOWN: angle = 180; break;
-              case LEFT: angle = 270; break;
+
+            switch(tail_dir)
+            {
+              case UP: to_render = CaudaCima_texture; break;
+              case RIGHT: to_render = CaudaDireita_texture; break;
+              case DOWN: to_render = CaudaBaixo_texture; break;
+              case LEFT: to_render = CaudaEsquerda_texture; break;
             }
-            SDL_RenderCopyEx(renderer, snake_tail_texture, NULL, &dest_rect, angle, NULL, SDL_FLIP_NONE);
             break;
         }
-        case SEGMENT_CURVE: {
-            switch(calculate_curve_angle(prev_direction, mapMatrix[cell_posX][cell_posY].snake.forwardDirection)){
-              case 1: // Direita - Cima
-              SDL_RenderCopyEx(renderer, snake_curve_i_texture, NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
-              break;
-              case 2: // Esquerda - Cima
-              SDL_RenderCopyEx(renderer, snake_curve_o_texture, NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
-              break;
-              case 3: // Direita - Baixo
-              SDL_RenderCopyEx(renderer, snake_curve_o_texture, NULL, &dest_rect, 180, NULL, SDL_FLIP_NONE);
-              break;
-              case 4: // Esquerda - Baixo
-              SDL_RenderCopyEx(renderer, snake_curve_i_texture, NULL, &dest_rect, 180, NULL, SDL_FLIP_NONE);
-              break;
+        case SEGMENT_CURVE:
+          {
+            switch(mapMatrix[cell_posX][cell_posY].snake.forwardDirection){
+              case UP: // Direita - Cima
+                to_render = prev_direction == LEFT ? CurvaCimaDireita_texture : CurvaCimaEsquerda_texture;
+                break;
+              case DOWN: // Esquerda - Cima
+                to_render = prev_direction == LEFT ? CurvaBaixoDireita_texture : CurvaBaixoEsquerda_texture;
+                break;
+              case LEFT: // Direita - Baixo
+                to_render = prev_direction == DOWN ? CurvaCimaEsquerda_texture : CurvaBaixoEsquerda_texture;
+                break;
+              case RIGHT: // Esquerda - Baixo
+                to_render = prev_direction == DOWN ? CurvaCimaDireita_texture : CurvaBaixoDireita_texture;
+                break;
             }
       break;
       }
         case SEGMENT_STRAIGHT: {
-            double angle = 0;
             switch(mapMatrix[cell_posX][cell_posY].snake.forwardDirection) {
-                case UP: angle = 0; break;
-                case RIGHT: angle = 90; break;
-                case DOWN: angle = 180; break;
-                case LEFT: angle = 270; break;
+                case UP: to_render = retoVertical_texture; break;
+                case RIGHT: to_render = retoEsquerdaDireita_texture; break;
+                case DOWN: to_render = retoVertical_texture; break;
+                case LEFT: to_render = retoDireitaEsquerda_texture; break;
             }
-            SDL_RenderCopyEx(renderer, snake_body_texture, NULL, &dest_rect, angle, NULL, SDL_FLIP_NONE);
             break;
         }
 
     }
+    SDL_RenderCopyEx(renderer, to_render, NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
+
 
     // Atualiza a direção anterior para o próximo segmento
     prev_direction = mapMatrix[cell_posX][cell_posY].snake.forwardDirection;
@@ -548,9 +674,30 @@ for(int i = 0; i < snake_size; i++) {
   // Renderiza as frutas
   for(int x = 0; x < MATRIX_WIDTH; x++) {
       for(int y = 0; y < MATRIX_HEIGHT; y++) {
-          if(mapMatrix[x][y].type == FRUIT_TILE) {
-              SDL_Rect dest_rect = rectFromCellPos(x, y);
-              SDL_RenderCopy(renderer, fruit_texture, NULL, &dest_rect);
+          if(mapMatrix[x][y].type == FRUIT_TILE)
+          {
+            SDL_Texture* to_render = NULL;
+            switch (mapMatrix[x][y].fruit.sprite)
+            {
+              case 0:
+              case 1:
+                to_render = manga_texture;
+                break;
+              case 2:
+              case 3:
+                to_render = limao_texture;
+                break;
+              case 4:
+              case 5:
+                to_render = caju_texture;
+                break;
+              case 6:
+                to_render = pitu_texture;
+                break;
+
+            }
+            SDL_Rect dest_rect = rectFromCellPos(x, y);
+            SDL_RenderCopy(renderer, to_render, NULL, &dest_rect);
           }
       }
   }
