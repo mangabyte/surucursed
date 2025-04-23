@@ -273,14 +273,16 @@ void setup()
   snake_headY = SNAKE_HEADY;
 
   // Iniciando posição da cauda da cobra
-  snake_tailX = SNAKE_TAILX;
-  snake_tailY = SNAKE_TAILY;
+  snake_tailX = SNAKE_HEADX;
+  snake_tailY = SNAKE_HEADY-2;
 
   // Iniciando as posições iniciais da cobra
-  mapMatrix[5][4].snake = (snakeTile){SNAKE_TILE,DOWN};
-  mapMatrix[5][3].snake = (snakeTile){SNAKE_TILE,DOWN};
+  mapMatrix[snake_headX][snake_headY].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[snake_headX][snake_headY-1].snake = (snakeTile){SNAKE_TILE,UP};
+  mapMatrix[snake_headX][snake_headY-2].snake = (snakeTile){SNAKE_TILE,UP};
 
-  snake_size = 2;
+
+  snake_size = 3;
 
   // Criando as primeiras frutas em posições aleatórias
   for (int i = 0; i < 1; i++) { // i < x = quantas frutas existirão no mapa
