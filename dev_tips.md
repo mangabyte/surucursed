@@ -175,14 +175,18 @@ Tenha a extensão **[EditorConfig for VS Code (EditorConfig)](https://marketplac
 - Baixe o arquivo "[SDL2-devel-2.32.2-mingw.tar.gz](https://github.com/libsdl-org/SDL/releases)".
 - Extraia o arquivo instalado fora do projeto.
 - Após a extrair, vá em "\SDL2-2.32.2\i686-w64-mingw32", copie as pastas "include" e "lib" para a pasta "SDL2" do projeto.
-- Por fim, ainda no arquivo extraido, vá em "\SDL2-2.32.2\i686-w64-mingw32\bin" e copie o arquivo SDL2.dll para a raiz do projeto.
+- Ainda no arquivo extraído vá em "\SDL2-2.32.2\i686-w64-mingw32\bin" e copie o arquivo SDL2.dll para a raiz do projeto.
+- Agora, seguindo o mesmo procedimento baixe o arquivo "[SDL2_image-devel-2.8.8-mingw.tar.gz](https://github.com/libsdl-org/SDL_image/releases)" e o extraia para fora do projeto.
+- Após a extrair, vá em "\SDL2_image-2.8.8\i686-w64-mingw32", copie as pastas "include" e "lib" para a pasta "SDL2" do projeto.
+- Ainda no arquivo extraído vá em "\SDL2_image-2.8.8\i686-w64-mingw32\bin" e copie o arquivo SDL2_image.dll para a raiz do projeto.
 
 ### No linux
 
 Use o comando
 
 ```bash
-yay -S sdl2
+yay -S sdl2 sdl2_image
+
 ```
 
 ### Gerando o executável
@@ -190,11 +194,11 @@ yay -S sdl2
 #### Usando windows
 
 ```bash
-gcc -Wall -std=c99 -I SDL2/include -L SDL2/lib ./*.c -lmingw32 -lSDL2main -lSDL2 -lm -o game
+gcc -Wall -std=c99 -I SDL2/include -L SDL2/lib ./*.c -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lm -o game
 ```
 
 #### Usando linux
 
 ```bash
-gcc -Wall -std=c99 ./*.c -lSDL2 -lm -o game
+gcc -Wall -std=c99 ./*.c -lSDL2 -lSDL2_image -lm -o game
 ```
