@@ -22,6 +22,7 @@
 // Variaveis para gerir o tempo de jogo para movimentação da cobrinha
 Uint32 last_update_time = 0;
 const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
+int slashcount = 0;
 
 // MACROS com os parametros de cores (RGB alpha)
 #define RED 255,0,0,255
@@ -59,10 +60,21 @@ SDL_Texture* caju_texture  = NULL;
 SDL_Texture* limao_texture  = NULL;
 
 SDL_Texture* background_texture = NULL;
+SDL_Texture* menu_texture = NULL;
+SDL_Texture* mangabyte_texture = NULL;
+
 
 // Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
 extern int game_is_running;
 
+// Estados do jogo
+typedef enum {
+  GAME_STATE_MENU,
+  GAME_STATE_PLAYING,
+  GAME_STATE_SPLASH,
+} GameState;
+
+static GameState game_state = GAME_STATE_SPLASH; // Inicia o jogo como menu
 // Definindo o enum indica o que
 // cada celula do mapa pode assumir
 typedef enum mapTileType
@@ -335,28 +347,49 @@ void load_textures(SDL_Renderer* renderer) {
   }
   background_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
+
+  // Carrega a textura do Menu
+  surface = IMG_Load("assets/menu.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar menu.png: %s\n", IMG_GetError());
+      return;
+  }
+  menu_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+
+  // Carrega a textura da Splash Screen
+  surface = IMG_Load("assets/mangabyte.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar mangabyte.png: %s\n", IMG_GetError());
+      return;
+  }
+  mangabyte_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
 }
 void cleanup_textures() {
 
-  if(CabecaBaixo_texture) SDL_DestroyTexture( CabecaBaixo_texture);
-  if(CabecaCima_texture) SDL_DestroyTexture( CabecaCima_texture);
-  if(CabecaDireita_texture) SDL_DestroyTexture( CabecaDireita_texture);
-  if(CabecaEsquerda_texture) SDL_DestroyTexture( CabecaEsquerda_texture);
-  if(CaudaBaixo_texture) SDL_DestroyTexture( CaudaBaixo_texture);
-  if(CaudaCima_texture) SDL_DestroyTexture( CaudaCima_texture);
-  if(CaudaDireita_texture) SDL_DestroyTexture( CaudaDireita_texture);
-  if(CaudaEsquerda_texture) SDL_DestroyTexture( CaudaEsquerda_texture);
-  if(CurvaBaixoDireita_texture ) SDL_DestroyTexture( CurvaBaixoDireita_texture);
-  if(CurvaBaixoEsquerda_texture ) SDL_DestroyTexture( CurvaBaixoEsquerda_texture);
-  if(CurvaCimaDireita_texture ) SDL_DestroyTexture( CurvaCimaDireita_texture);
-  if(CurvaCimaEsquerda_texture ) SDL_DestroyTexture( CurvaCimaEsquerda_texture);
-  if(retoDireitaEsquerda_texture ) SDL_DestroyTexture( retoDireitaEsquerda_texture);
-  if(retoEsquerdaDireita_texture ) SDL_DestroyTexture( retoEsquerdaDireita_texture);
-  if(retoVertical_texture ) SDL_DestroyTexture( retoVertical_texture);
-  if(pitu_texture ) SDL_DestroyTexture( pitu_texture);
-  if(manga_texture ) SDL_DestroyTexture( manga_texture);
-  if(caju_texture ) SDL_DestroyTexture( caju_texture);
-  if(limao_texture ) SDL_DestroyTexture( limao_texture);
+  if(CabecaBaixo_texture) SDL_DestroyTexture(CabecaBaixo_texture);
+  if(CabecaCima_texture) SDL_DestroyTexture(CabecaCima_texture);
+  if(CabecaDireita_texture) SDL_DestroyTexture(CabecaDireita_texture);
+  if(CabecaEsquerda_texture) SDL_DestroyTexture(CabecaEsquerda_texture);
+  if(CaudaBaixo_texture) SDL_DestroyTexture(CaudaBaixo_texture);
+  if(CaudaCima_texture) SDL_DestroyTexture(CaudaCima_texture);
+  if(CaudaDireita_texture) SDL_DestroyTexture(CaudaDireita_texture);
+  if(CaudaEsquerda_texture) SDL_DestroyTexture(CaudaEsquerda_texture);
+  if(CurvaBaixoDireita_texture) SDL_DestroyTexture(CurvaBaixoDireita_texture);
+  if(CurvaBaixoEsquerda_texture) SDL_DestroyTexture(CurvaBaixoEsquerda_texture);
+  if(CurvaCimaDireita_texture) SDL_DestroyTexture(CurvaCimaDireita_texture);
+  if(CurvaCimaEsquerda_texture) SDL_DestroyTexture(CurvaCimaEsquerda_texture);
+  if(retoDireitaEsquerda_texture) SDL_DestroyTexture(retoDireitaEsquerda_texture);
+  if(retoEsquerdaDireita_texture) SDL_DestroyTexture(retoEsquerdaDireita_texture);
+  if(retoVertical_texture) SDL_DestroyTexture(retoVertical_texture);
+  if(pitu_texture) SDL_DestroyTexture(pitu_texture);
+  if(manga_texture) SDL_DestroyTexture(manga_texture);
+  if(caju_texture) SDL_DestroyTexture(caju_texture);
+  if(limao_texture) SDL_DestroyTexture(limao_texture);
+  if(background_texture) SDL_DestroyTexture(background_texture);
+  if(menu_texture) SDL_DestroyTexture(menu_texture);
+  if(mangabyte_texture) SDL_DestroyTexture(mangabyte_texture);
 
   IMG_Quit();
 }
@@ -436,6 +469,11 @@ void process_input() {
       case SDL_KEYDOWN:
           if (event.key.keysym.sym == SDLK_ESCAPE) game_is_running = FALSE;
 
+          // Lê input para trocar para o jogo se estiver na tela menu
+          if (game_state == GAME_STATE_MENU && event.key.keysym.sym == SDLK_SPACE) {
+            game_state = GAME_STATE_PLAYING;
+            setup(); // Reinicia o jogo
+          }
           //Captura as teclas UP/w , DOWN/s , LEFT/a , RIGHT/d e muda a direção da cabeça da cobra
           if (event.key.keysym.sym == SDLK_w || event.key.keysym.sym == SDLK_UP) {
               // Se a posição da cobra for contrária a da tecla, não move
@@ -464,6 +502,14 @@ void process_input() {
 
 void update()
 {
+
+  if (game_state != GAME_STATE_PLAYING && game_state != GAME_STATE_SPLASH) return; // Não atualiza se a tela do jogo não estiver rodando
+  if (game_state==GAME_STATE_SPLASH){ // Timer simples da Splash Screen para mudar para o menu
+    if (slashcount >= 10000){
+      game_state = GAME_STATE_MENU;
+      return;
+    } slashcount++;
+  }
     // Verifica se já passou o tempo necessário para a próxima atualização
     Uint32 current_time = SDL_GetTicks();
     if (current_time - last_update_time < update_interval) {
@@ -559,7 +605,24 @@ void render(SDL_Renderer* renderer) {
 
   // Define a área de renderização do jogo
   SDL_RenderSetViewport(renderer, &game_viewport);
-
+  if (game_state==GAME_STATE_SPLASH){
+    SDL_Rect splash_rect = {
+      0,
+      0,
+      WINDOW_HEIGHT,
+      WINDOW_HEIGHT
+    };
+    SDL_RenderCopy(renderer, mangabyte_texture, NULL, &splash_rect);
+  }
+  else if (game_state==GAME_STATE_MENU){
+  SDL_Rect menu_rect = {
+    0,
+    0,
+    WINDOW_HEIGHT,
+    WINDOW_HEIGHT
+  };
+  SDL_RenderCopy(renderer, menu_texture, NULL, &menu_rect);}
+  else if (game_state==GAME_STATE_PLAYING){
   // ======= LAYERS (Camadas de renderização) =======
 
   /* Layers não são literalmente programadas, mas por consequência da dinâmica,
@@ -701,8 +764,10 @@ for(int i = 0; i < snake_size; i++) {
           }
       }
   }
-
+}
   // Restaura o viewport padrão para a janela toda
   SDL_RenderSetViewport(renderer, NULL);
   SDL_RenderPresent(renderer);
 }
+
+
