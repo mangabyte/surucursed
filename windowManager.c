@@ -42,7 +42,6 @@ int initialize_window(void)
         fprintf(stderr, "Error creating SDL Rendrer");
         return FALSE;
     }
-    
+
     return TRUE;
 }
-

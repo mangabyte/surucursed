@@ -62,6 +62,7 @@ SDL_Texture* limao_texture  = NULL;
 SDL_Texture* background_texture = NULL;
 SDL_Texture* menu_texture = NULL;
 SDL_Texture* mangabyte_texture = NULL;
+SDL_Texture* gameover_texture = NULL;
 
 
 // Definido na main, quando 0 ou FALSE o jogo para após executar a renderização
@@ -72,9 +73,10 @@ typedef enum {
   GAME_STATE_MENU,
   GAME_STATE_PLAYING,
   GAME_STATE_SPLASH,
+  GAME_STATE_GAMEOVER,
 } GameState;
 
-static GameState game_state = GAME_STATE_SPLASH; // Inicia o jogo como menu
+static GameState game_state = GAME_STATE_SPLASH; // Inicia o jogo como tela do Mangabyte
 // Definindo o enum indica o que
 // cada celula do mapa pode assumir
 typedef enum mapTileType
@@ -365,6 +367,15 @@ void load_textures(SDL_Renderer* renderer) {
   }
   mangabyte_texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
+
+  // Carrega a textura da Tela de Game Over
+  surface = IMG_Load("assets/gameover.png");
+  if (!surface) {
+      fprintf(stderr, "Erro ao carregar gameover.png: %s\n", IMG_GetError());
+      return;
+  }
+  gameover_texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
 }
 void cleanup_textures() {
 
@@ -390,6 +401,7 @@ void cleanup_textures() {
   if(background_texture) SDL_DestroyTexture(background_texture);
   if(menu_texture) SDL_DestroyTexture(menu_texture);
   if(mangabyte_texture) SDL_DestroyTexture(mangabyte_texture);
+  if(gameover_texture) SDL_DestroyTexture(gameover_texture);
 
   IMG_Quit();
 }
@@ -442,6 +454,7 @@ void setup()
   mapMatrix[snake_headX][snake_headY-1].snake = (snakeTile){SNAKE_TILE,UP};
   mapMatrix[snake_headX][snake_headY-2].snake = (snakeTile){SNAKE_TILE,UP};
 
+  head_dir = UP; // Coloca direção para cima para garantir que quando o jogo reiniciar pós gameover a direção voltará
 
   snake_size = 3;
 
@@ -471,6 +484,12 @@ void process_input() {
 
           // Lê input para trocar para o jogo se estiver na tela menu
           if (game_state == GAME_STATE_MENU && event.key.keysym.sym == SDLK_SPACE) {
+            game_state = GAME_STATE_PLAYING;
+            setup(); // Reinicia o jogo
+          }
+
+          // Lê input para recomeçar o jogo caso estiver no gameover
+          if (game_state == GAME_STATE_GAMEOVER && event.key.keysym.sym == SDLK_SPACE) {
             game_state = GAME_STATE_PLAYING;
             setup(); // Reinicia o jogo
           }
@@ -538,13 +557,9 @@ void update()
 
     // Caso a cobra bata na parede
     if (new_headX < 0 || new_headX >= MATRIX_WIDTH || new_headY < 0 || new_headY >= MATRIX_HEIGHT) {
-        return;
+      game_state=GAME_STATE_GAMEOVER;
+      return;
     }
-
-    // Caso a nova posição da cabeça seja o corpo da cobra
-    if (mapMatrix[new_headX][new_headY].type == SNAKE_TILE) {
-      // Implementar código para colidir com o corpo
-  }
 
     // Caso a nova posição da cabeça seja uma fruta
     if (mapMatrix[new_headX][new_headY].type == FRUIT_TILE) {
@@ -590,6 +605,13 @@ void update()
         // Atualiza a posição da cauda
         snake_tailX = next_tailX;
         snake_tailY = next_tailY;
+
+        // Caso a nova posição da cabeça seja o corpo da cobra (checagem feita depois para garantir que a colisão não aconteça antes da posição da cauda atualizar)
+        if (mapMatrix[new_headX][new_headY].type == SNAKE_TILE) {
+          game_state=GAME_STATE_GAMEOVER;
+          return;
+        }
+
     }
 
     // Atualiza a posição da cabeça
@@ -606,22 +628,30 @@ void render(SDL_Renderer* renderer) {
   // Define a área de renderização do jogo
   SDL_RenderSetViewport(renderer, &game_viewport);
   if (game_state==GAME_STATE_SPLASH){
-    SDL_Rect splash_rect = {
+    SDL_Rect screen_rect = {
       0,
       0,
       WINDOW_HEIGHT,
       WINDOW_HEIGHT
     };
-    SDL_RenderCopy(renderer, mangabyte_texture, NULL, &splash_rect);
+    SDL_RenderCopy(renderer, mangabyte_texture, NULL, &screen_rect);
   }
   else if (game_state==GAME_STATE_MENU){
-  SDL_Rect menu_rect = {
+    SDL_Rect screen_rect = {
     0,
     0,
     WINDOW_HEIGHT,
     WINDOW_HEIGHT
   };
-  SDL_RenderCopy(renderer, menu_texture, NULL, &menu_rect);}
+  SDL_RenderCopy(renderer, menu_texture, NULL, &screen_rect);}
+  else if (game_state==GAME_STATE_GAMEOVER){
+    SDL_Rect screen_rect = {
+    0,
+    0,
+    WINDOW_HEIGHT,
+    WINDOW_HEIGHT
+  };
+  SDL_RenderCopy(renderer, gameover_texture, NULL, &screen_rect);}
   else if (game_state==GAME_STATE_PLAYING){
   // ======= LAYERS (Camadas de renderização) =======
 
