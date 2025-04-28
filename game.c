@@ -19,6 +19,9 @@
 #define SNAKE_HEADX 5
 #define SNAKE_HEADY 3
 
+#define INITIAL_SNAKE_SIZE 3
+#define INITIAL_FRUIT_QUANTITY 5
+
 // Variaveis para gerir o tempo de jogo para movimentação da cobrinha
 Uint32 last_update_time = 0;
 const Uint32 update_interval = 400;  // Intervalo em milissegundos (400ms)
@@ -456,10 +459,10 @@ void setup()
 
   head_dir = UP; // Coloca direção para cima para garantir que quando o jogo reiniciar pós gameover a direção voltará
 
-  snake_size = 3;
+  snake_size = INITIAL_SNAKE_SIZE;
 
   // Criando as primeiras frutas em posições aleatórias
-  for (int i = 0; i < 5; i++) { // i < x = quantas frutas existirão no mapa
+  for (int i = 0; i < INITIAL_FRUIT_QUANTITY; i++) { // i < x = quantas frutas existirão no mapa
     int fruitX, fruitY;
     do {
         fruitX = rand() % MATRIX_WIDTH;
@@ -524,7 +527,7 @@ void update()
 
   if (game_state != GAME_STATE_PLAYING && game_state != GAME_STATE_SPLASH) return; // Não atualiza se a tela do jogo não estiver rodando
   if (game_state==GAME_STATE_SPLASH){ // Timer simples da Splash Screen para mudar para o menu
-    if (slashcount >= 10000){
+    if (slashcount >= 500){
       game_state = GAME_STATE_MENU;
       return;
     } slashcount++;
